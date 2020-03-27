@@ -247,9 +247,9 @@ class MMRranges:
             self.season_numbers["us"] == self.season_numbers["eu"] == self.season_numbers["kr"]
         ), f"Season change going on. Current season numbers: {self.season_numbers}"
 
-        expected_amount = self.season_numbers["us"] - self.season_min + 1
+        expected_amount = 8
         assert (
-            len(self.data) == expected_amount
+            len(self.data) <= expected_amount
         ), f"Amount of fetched seasons {len(self.data)} does not match the expected amount of {expected_amount}"
 
         for season_id, queue_data in self.data.items():
