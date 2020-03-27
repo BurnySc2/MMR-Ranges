@@ -513,9 +513,9 @@ async def main():
     async with aiohttp.ClientSession() as client:
         mmrranges = MMRranges(client)
         await mmrranges.get_access_token()
-        title_data = mmrranges.get_title_data()
         await mmrranges.get_min_season()
         await mmrranges.get_season_number()
+        title_data = mmrranges.get_title_data()
         await mmrranges.get_all_data()
         await mmrranges.get_gm_data()
         mmrranges.prepare_response_data()
