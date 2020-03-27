@@ -1,4 +1,4 @@
-name: RunTests
+name: BuildMMRranges
 
 on: [push]
 
@@ -8,8 +8,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
-        python-version: [3.6, 3.7, 3.8]
+        os: [ubuntu-latest]
+        python-version: [3.7]
 
     steps:
       - uses: actions/checkout@v1
@@ -30,16 +30,17 @@ jobs:
         run: |
           poetry install
 
-      - name: Test with pytest
+      - name: Create data table and website
         run: |
-          poetry run pytest
+          poetry run python main.py ${{ secrets.CLIENT_ID }} ${{ secrets.CLIENT_SECRET }}
 
-      - name: Build
-        run: |
-          poetry build
+      - name: Publish to Github Pages
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        uses: JamesIves/github-pages-deploy-action@releases/v3
+        with:
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          BASE_BRANCH: master # The branch the action should deploy from.
+          BRANCH: gh-pages # The branch the action should deploy to.
+          FOLDER: website # The folder the action should deploy.
 
-      - name: Publish
-        continue-on-error: true
-        run: |
-          poetry publish --username ${{ secrets.pypi_username }} --password ${{ secrets.pypi_password }}
 

@@ -106,5 +106,5 @@ venv.bak/
 # Pycharm
 .idea/
 
-hello_world.txt
-image.png
+auth.json
+data.json
