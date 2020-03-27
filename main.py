@@ -261,9 +261,10 @@ class MMRranges:
                     7,
                 }, f"Something wrong with the amount of received league data for season {season_id}, only received {len(league_data)} values instead of expected 6 or 7"
                 for league_id, server_data in league_data.items():
-                    assert (
-                        len(server_data) in {1, 3}
-                    ), f"Something wrong with the amount of received server data for season {season_id}, only received {len(server_data)} values instead of expected 1 (for GM) or 3"
+                    assert len(server_data) in {
+                        1,
+                        3,
+                    }, f"Something wrong with the amount of received server data for season {season_id}, only received {len(server_data)} values instead of expected 1 (for GM) or 3"
         return True
 
     def verify_new_data_different_from_old_data(self):
@@ -449,7 +450,6 @@ class MMRranges:
 
         return tableContent
 
-    @property
     def get_title_data(self):
         t = arrow.now("UTC")
         time_for_title = t.format("dddd YYYY-MM-DD HH:mm")
@@ -465,13 +465,13 @@ class MMRranges:
 
         return time_for_title, season_number, season_start_date, season_end_date
 
-    def build_html_file(self):
+    def build_html_file(self, title_data):
         """ Returns content of HTML file """
         content = ""
 
         # file start
         # title with last update time stamp
-        content += self.fileStart.format(*self.get_title_data)
+        content += self.fileStart.format(*title_data)
 
         # build season+gametype dropdown navbar
         content += self.get_dropdown_navbar
@@ -513,6 +513,7 @@ async def main():
     async with aiohttp.ClientSession() as client:
         mmrranges = MMRranges(client)
         await mmrranges.get_access_token()
+        title_data = mmrranges.get_title_data()
         await mmrranges.get_min_season()
         await mmrranges.get_season_number()
         await mmrranges.get_all_data()
@@ -521,16 +522,11 @@ async def main():
         mmrranges.verify_response_data()
         if mmrranges.verify_new_data_different_from_old_data():
             mmrranges.write_json_data()
-            content = mmrranges.build_html_file()
+            content = mmrranges.build_html_file(title_data)
             mmrranges.write_to_html(content)
             exit(0)
         # Error, don't continue next step in github actions
         exit(1)
-
-
-async def download_site(session: aiohttp.ClientSession, url: str) -> aiohttp.ClientResponse:
-    async with session.get(url) as response:
-        return response
 
 
 if __name__ == "__main__":
