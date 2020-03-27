@@ -117,8 +117,8 @@ class MMRranges:
     async def get_season_number(self):
         tasks = []
         get_season_number_url = "https://{}.api.blizzard.com/sc2/ladder/season/{}"
-        for index, region in enumerate(self.regions):
-            region_url = get_season_number_url.format(region, index + 1)
+        for index, region in enumerate(self.regions, start=1):
+            region_url = get_season_number_url.format(region, index)
             task = asyncio.ensure_future(self.fetch(region_url))
             tasks.append(task)
         responses = await asyncio.gather(*tasks)
@@ -146,7 +146,7 @@ class MMRranges:
         function_call_count = 0
         for region, season_max in self.season_numbers.items():
             # Only show the last 8 seasons
-            season_min = max(season_max - 7, self.season_min)
+            season_min = max(season_max - 8, self.season_min)
             for season_number in range(season_min, season_max + 1):
                 for queue_id in self.queue_ids:
                     for team_type in self.team_types:
@@ -183,7 +183,7 @@ class MMRranges:
                 # fmt: off
                 response_data = {
                     # Season
-                    str(self.season_max - 1): {
+                    str(self.season_max): {
                         # Queue id, 201 for 1v1
                         "201": {
                             # League id, 6 for GM
@@ -247,7 +247,8 @@ class MMRranges:
             self.season_numbers["us"] == self.season_numbers["eu"] == self.season_numbers["kr"]
         ), f"Season change going on. Current season numbers: {self.season_numbers}"
 
-        expected_amount = 8
+        # One season will be dismissed
+        expected_amount = 9
         assert (
             len(self.data) <= expected_amount
         ), f"Amount of fetched seasons {len(self.data)} does not match the expected amount of {expected_amount}"
@@ -288,10 +289,10 @@ class MMRranges:
     def write_json_data(self):
         logger.info(f"Writing json data to: {self.data_json_path}")
         with open(self.data_json_path, "w") as f:
-            json.dump(self.data, f, indent=2)
+            json.dump(self.data, f, indent=2, sort_keys=True)
 
     @property
-    def fileStart(self):
+    def file_start(self):
         return """
 <!DOCTYPE html>
 <html lang="en">
@@ -417,7 +418,7 @@ class MMRranges:
                     <tbody>
 """
         if active:
-            tableStart = tableStart.format(season + self.hqueue_ids[queue_id], " in active")
+            tableStart = tableStart.format(season + self.hqueue_ids[queue_id], " active")
         else:
             tableStart = tableStart.format(season + self.hqueue_ids[queue_id], "")
 
@@ -443,9 +444,17 @@ class MMRranges:
                 else:
                     firstColumn = "{} {}".format(self.hleague_ids[league_id], self.htier[tierid])
                 tableContent += "\t" * (indention + 1) + columnEntryTemplate.format(firstColumn)
+                region_data = {
+                    "us": "",
+                    "eu": "",
+                    "kr": "",
+                }
                 for region, rating in data4.items():
-                    cellEntry = "{} - {}".format(rating["min_rating"], rating["max_rating"])
-                    tableContent += "\t" * (indention + 1) + columnEntryTemplate.format(cellEntry)
+                    region_data[region] = "{} - {}".format(rating["min_rating"], rating["max_rating"])
+                # Write us, then eu, then kr content
+                tableContent += "\t" * (indention + 1) + columnEntryTemplate.format(region_data["us"])
+                tableContent += "\t" * (indention + 1) + columnEntryTemplate.format(region_data["eu"])
+                tableContent += "\t" * (indention + 1) + columnEntryTemplate.format(region_data["kr"])
                 tableContent += "\t" * indention + rowEnd
         tableContent += tableEnd
 
@@ -472,7 +481,7 @@ class MMRranges:
 
         # file start
         # title with last update time stamp
-        content += self.fileStart.format(*title_data)
+        content += self.file_start.format(*title_data)
 
         # build season+gametype dropdown navbar
         content += self.get_dropdown_navbar
@@ -481,15 +490,11 @@ class MMRranges:
         content += """<div class="tab-content">"""
         for season, data1 in self.data.items():
             # Last and previous season are identical for some reason, so everything is offset by 1, and skip most recent season
-            season_plus_one: int = int(season) + 1
-            if season_plus_one > self.season_max:
-                logger.info(f"Continueing at most recent season: {season_plus_one}")
-                continue
-            logger.info(f"Building HTML, season: {season_plus_one}")
+            logger.info(f"Building HTML, season: {season}")
             for queue_id, data2 in data1.items():
-                boolean = season_plus_one == self.season_max and queue_id == self.queue_ids[0]
+                boolean = season == str(self.season_max) and queue_id == self.queue_ids[0]
                 content += self.create_season_gametype_table(
-                    str(season_plus_one), queue_id, data2, active=boolean, indention=6
+                    str(season), queue_id, data2, active=boolean, indention=6
                 )
         content += """</div>"""
 
