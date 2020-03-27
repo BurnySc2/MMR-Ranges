@@ -145,8 +145,9 @@ class MMRranges:
         total_responses = []
         function_call_count = 0
         for region, season_max in self.season_numbers.items():
-            # for season_number in range(season_max - 2, season_max + 1):
-            for season_number in range(self.season_min, season_max + 1):
+            # Only show the last 8 seasons
+            season_min = max(season_max - 8, self.season_min)
+            for season_number in range(season_min, season_max + 1):
                 for queue_id in self.queue_ids:
                     for team_type in self.team_types:
                         # Skip GM
