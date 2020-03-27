@@ -39,6 +39,9 @@ class MMRranges:
         else:
             _, self.MY_CLIENT_ID, self.MY_CLIENT_SECRET = sys.argv
 
+        self.data_json_path = directory / "data.json"
+        self.index_html_path = directory / "website" / "index.html"
+
         # API rate limit
         self.rate_limit = 50  # x calls per second, can be up to 100 per second
         self.delay_per_fetch = 1 / self.rate_limit
