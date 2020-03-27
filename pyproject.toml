@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "MMR Ranges"
+name = "MMR_Ranges"
 version = "0.1.0"
 description = ""
 authors = ["BuRny <gamingburny@gmail.com>"]
