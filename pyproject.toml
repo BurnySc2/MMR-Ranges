@@ -1,11 +1,8 @@
 [tool.poetry]
-name = "burny_test_template"
+name = "MMR Ranges"
 version = "0.1.0"
 description = ""
 authors = ["BuRny <gamingburny@gmail.com>"]
-packages = [
-    { include = "burny_test_template/*.py" },
-]
 
 [tool.poetry.dependencies]
 python = "^3.6"
