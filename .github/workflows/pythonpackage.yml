@@ -1,4 +1,4 @@
-name: BuildMMRranges
+name: Build_MMR_ranges
 
 on: [push]
 
