@@ -96,7 +96,10 @@ class MMRranges:
 
     async def get_min_season(self):
         for i in range(500):
-            response = await self.get_api_data("eu", f"{i}", "101", "0", "5")
+            try:
+                response = await self.get_api_data("eu", f"{i}", "101", "0", "5")
+            except ValueError:
+                continue
             status = response.get("code", 200)
             if status == 200:
                 self.season_min = i
@@ -112,7 +115,11 @@ class MMRranges:
         async with self.client.get(correct_url) as response:
             # assert response.status == 200, f"Response status: {response.status}, error: {response.reason}"
             logger.info(f"Done fetching url {url}")
-            return await response.json()
+            if response.status == 200:
+                json_response = await response.json()
+            else:
+                raise ValueError(f"Unable to decode url '{url}', receiving response status '{response.status}' and error '{response.reason}'")
+            return json_response
 
     async def get_season_number(self):
         tasks = []
@@ -178,8 +185,12 @@ class MMRranges:
             json_data = await response.json()
             if json_data.get("code", 200) == 200:
                 # "mmr" entry might be missing
-                min_mmr = min(member["mmr"] for member in json_data["ladderTeams"] if "mmr" in member)
-                max_mmr = max(member["mmr"] for member in json_data["ladderTeams"] if "mmr" in member)
+                try:
+                    min_mmr = min(member["mmr"] for member in json_data["ladderTeams"] if "mmr" in member)
+                    max_mmr = max(member["mmr"] for member in json_data["ladderTeams"] if "mmr" in member)
+                except ValueError:
+                    # Sequence might be empty
+                    continue
                 # fmt: off
                 response_data = {
                     # Season
