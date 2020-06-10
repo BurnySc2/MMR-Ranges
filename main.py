@@ -118,7 +118,11 @@ class MMRranges:
             if response.status == 200:
                 json_response = await response.json()
             else:
-                raise ValueError(f"Unable to decode url '{url}', receiving response status '{response.status}' and error '{response.reason}'")
+                # raise ValueError(f"Unable to decode url '{url}', receiving response status '{response.status}' and error '{response.reason}'")
+                logger.error(
+                    f"Unable to decode url '{url}', receiving response status '{response.status}' and error '{response.reason}'"
+                )
+                return {}
             return json_response
 
     async def get_season_number(self):
@@ -151,8 +155,9 @@ class MMRranges:
         tasks = []
         total_responses = []
         function_call_count = 0
-        for region, season_max in self.season_numbers.items():
-            # Only show the last 8 seasons
+        season_max = max(self.season_numbers.values())
+        for region in self.season_numbers:
+            # Only show the last 8 seasons because the HTML gets too wide otherwise
             season_min = max(season_max - 8, self.season_min)
             for season_number in range(season_min, season_max + 1):
                 for queue_id in self.queue_ids:
@@ -182,6 +187,9 @@ class MMRranges:
             response = await self.client.get(
                 f"https://us.api.blizzard.com/sc2/ladder/grandmaster/{index}?access_token={self.token}"
             )
+            # If GM is not open yet, ignore
+            if response.status != 200:
+                continue
             json_data = await response.json()
             if json_data.get("code", 200) == 200:
                 # "mmr" entry might be missing
@@ -228,6 +236,10 @@ class MMRranges:
 
     def prepare_response_data(self):
         for response in self.responses:
+            # There was an error in the response, empty dict is returned
+            if response == {}:
+                continue
+
             if response.get("code", 200) == 200:
                 # total season id, in general each year has 4-6 seasons
                 season_id: int = str(response["key"]["season_id"])
@@ -504,9 +516,7 @@ class MMRranges:
             logger.info(f"Building HTML, season: {season}")
             for queue_id, data2 in data1.items():
                 boolean = season == str(self.season_max) and queue_id == self.queue_ids[0]
-                content += self.create_season_gametype_table(
-                    str(season), queue_id, data2, active=boolean, indention=6
-                )
+                content += self.create_season_gametype_table(str(season), queue_id, data2, active=boolean, indention=6)
         content += """</div>"""
 
         # write info about donation, contact, and pythonanywhere website alternative
