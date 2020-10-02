@@ -13,7 +13,7 @@ interface State {
 
 export default class Page extends Component<Props, State> {
     state = {
-        active: 102,
+        active: 0,
     }
 
     render() {
