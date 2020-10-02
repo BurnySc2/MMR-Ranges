@@ -31,8 +31,6 @@ export default class Page extends Component<Props, State> {
                     <Header />
 
                     {/* navbar */}
-                    {/* tables */}
-                    {/* statistics */}
                     <div className={section_class}>
                         <div className={topic_class}>
                             <div className={topic_description_text}>MMR</div>
@@ -115,13 +113,14 @@ export default class Page extends Component<Props, State> {
                             </div>
                         </div>
                     </div>
+                    {/* Table and stats content */}
                     <Table data={data_mmr["201"]} enabled={this.state.active === 0} />
                     <Table data={data_mmr["202"]} enabled={this.state.active === 1} />
                     <Table data={data_mmr["203"]} enabled={this.state.active === 2} />
                     <Table data={data_mmr["204"]} enabled={this.state.active === 3} />
                     <Table data={data_mmr["206"]} enabled={this.state.active === 4} />
-                    <Statistics data={data_avg_games["eu"]} enabled={this.state.active === 101} />
-                    <Statistics data={data_avg_winrate["eu"]} enabled={this.state.active === 102} />
+                    <Statistics data={data_avg_games} enabled={this.state.active === 101} />
+                    <Statistics data={data_avg_winrate} enabled={this.state.active === 102} />
                 </div>
             </div>
         )
