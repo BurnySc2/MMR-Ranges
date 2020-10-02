@@ -14,19 +14,110 @@ import asyncio
 import aiohttp
 import arrow
 
-
 # Simple logging https://github.com/Delgan/loguru
 from loguru import logger
+
+from gather.get_legacy_ladders_data import get_sc2_legacy_ladder_api_data
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
 # Type annotation / hints
-from typing import List, Iterable, Union
+from typing import Dict, Set, List, Iterable, Union, Optional, Any
+
+from gather.helper import get_access_token
+from gather.create_header import get_current_season_info, convert_header_data_to_json
+from gather.get_api_data import get_sc2_league_api_data
+
+from gather.create_tables import prepare_mmr_table_data, create_mmr_tables
+from gather.get_gm_data import get_sc2_gm_api_data
+
+"""
+ladder API:
+/sc2/ladder/season/:regionId: 
+{
+  "seasonId": 45,
+  "number": 3,
+  "year": 2020,
+  "startDate": "1601487375",
+  "endDate": "1611640800"
+}
+
+/sc2/ladder/grandmaster/:regionId: 
+
+/data/sc2/league/{seasonId}/{queueId}/{teamType}/{leagueId}
+{
+  "_links": {
+    "self": {
+      "href": "https://us.api.blizzard.com/data/sc2/league/45/201/0/5?namespace=prod"
+    }
+  },
+  "key": {
+    "league_id": 5,
+    "season_id": 45,
+    "queue_id": 201,
+    "team_type": 0
+  },
+  "tier": [
+    {
+      "id": 0,
+      "min_rating": 4781,
+      "max_rating": 5012,
+      "division": [
+        {
+          "id": 5,
+          "ladder_id": 292909,
+          "member_count": 100
+        },
+...
+
+/sc2/legacy/ladder/:regionId/:ladderId
+{
+  "ladderMembers": [
+    {
+      "character": {
+        "id": "XXXX",
+        "realm": 1,
+        "region": 1,
+        "displayName": "XXXX",
+        "clanName": "",
+        "clanTag": "",
+        "profilePath": "/profile/1/1/11293431"
+      },
+      "joinTimestamp": 1601501502,
+      "points": 623,
+      "wins": 29,
+      "losses": 16,
+      "highestRank": 2,
+      "previousRank": 0,
+      "favoriteRaceP1": "PROTOSS"
+    },
+
+/sc2/profile/:regionId/:realmId/:profileId/ladder/:ladderId
+{
+  "ladderTeams": [
+    {
+      "teamMembers": [
+        {
+          "id": "XXXX",
+          "realm": 1,
+          "region": 1,
+          "displayName": "XXXX",
+          "favoriteRace": "protoss"
+        }
+      ],
+      "previousRank": 0,
+      "points": 623,
+      "wins": 29,
+      "losses": 16,
+      "mmr": 5728,
+      "joinTimestamp": 1601501502
+    },
+"""
 
 
 class MMRranges:
     def __init__(self, client):
-        self.client = client
+        self.client: aiohttp.ClientSession = client
 
         directory = Path(__file__).parent
 
@@ -39,521 +130,58 @@ class MMRranges:
         else:
             _, self.MY_CLIENT_ID, self.MY_CLIENT_SECRET = sys.argv
 
-        self.data_json_path = directory / "data.json"
-        self.index_html_path = directory / "website" / "index.html"
+        # data_folder = directory / "src" / "data"
+        # self.raw_data_json_path = data_folder / "data_raw.json"
+        # self.mmr_data_json_path = data_folder / "data_mmr.json"
+        # self.gm_data_json_path = data_folder / "data_gm.json"
+        # self.stats_data_json_path = data_folder / "data_stats.json"
 
         # API rate limit
         self.rate_limit = 50  # x calls per second, can be up to 100 per second
         self.delay_per_fetch = 1 / self.rate_limit
 
-        # Will be populated later
-        self.token: str = ""
-        self.season_min = 0
-        self.season_numbers = {}
-        self.season_start: int = 0
-        self.season_end: int = 0
-        self.season_max: int = 0
+    async def async_init(self):
+        self.token: str = await get_access_token(self.client, self.MY_CLIENT_ID, self.MY_CLIENT_SECRET)
 
-        self.regions = ["us", "eu", "kr"]
-        self.queue_ids = ["201", "202", "203", "204", "206"]  # 1 on 1 etc
-        self.team_types = ["0"]  # arranged or random
-        self.league_ids = [x for x in range(6, -1, -1)]  # bronze to master league, 5 = master
-        self.hregions = {"eu": "Europe", "us": "Americas", "kr": "Korea"}
-        self.hqueue_ids = {"201": "1v1", "202": "2v2", "203": "3v3", "204": "4v4", "206": "Archon"}
-        leagues = ["Bronze", "Silver", "Gold", "Platinum", "Diamond", "Master", "GrandMaster"][::-1]
-        self.hleague_ids = {str(league_id): leagueName for league_id, leagueName in zip(self.league_ids, leagues)}
-        self.htier = {str(i): str(i + 1) for i in range(3)}
-
-        self.data = {}  # populated in prepare_response_data
-        """
-        self.data = {
-            "season": {
-                "queue_id" {
-                    "region": {
-                        "league": {
-                            "tierID": {
-                                "min_rating": 3000,
-                                "max_rating": 3500
-                            }
-                        }                        
-                    }    
-                }
-            }
-        }
-        """
-
-    async def get_access_token(self):
-        logger.info(f"Grabbing access token...")
-        response = await self.client.get(
-            "https://us.battle.net/oauth/token",
-            params={"grant_type": "client_credentials"},
-            auth=aiohttp.BasicAuth(self.MY_CLIENT_ID, self.MY_CLIENT_SECRET),
+    async def run(self):
+        # Grab raw API data
+        season_info = await get_current_season_info(self.client, self.token)
+        ladders_api_info = await get_sc2_league_api_data(
+            self.client, self.token, season_info.season_number, self.delay_per_fetch
         )
-        assert response.status == 200
-        token_json = await response.json()
-        logger.info(f"Got access token")
-        self.token = token_json["access_token"]
+        # gm_info = await get_sc2_gm_api_data(self.client, self.token, self.delay_per_fetch)
 
-    async def get_min_season(self):
-        for i in range(500):
-            try:
-                response = await self.get_api_data("eu", f"{i}", "101", "0", "5")
-            except ValueError:
-                continue
-            status = response.get("code", 200)
-            if status == 200:
-                self.season_min = i
-                logger.info(f"Grabbed minimum season: {i}")
-                return
+        # Format the received data into a readable shape
+        prepared_data = await prepare_mmr_table_data(ladders_api_info)
+        # TODO Mix GM data into prepared_data
 
-    async def fetch(self, url, fetch_delay=0):
-        if fetch_delay > 0:
-            await asyncio.sleep(fetch_delay)
-        logger.info(f"Fetching url {url}")
-        access_token = f"access_token={self.token}"
-        correct_url = url + access_token if url.endswith("?") or url.endswith("&") else url + f"?{access_token}"
-        async with self.client.get(correct_url) as response:
-            # assert response.status == 200, f"Response status: {response.status}, error: {response.reason}"
-            logger.info(f"Done fetching url {url}")
-            if response.status == 200:
-                json_response = await response.json()
-            else:
-                # raise ValueError(f"Unable to decode url '{url}', receiving response status '{response.status}' and error '{response.reason}'")
-                logger.error(
-                    f"Unable to decode url '{url}', receiving response status '{response.status}' and error '{response.reason}'"
-                )
-                return {}
-            return json_response
-
-    async def get_season_number(self):
-        tasks = []
-        get_season_number_url = "https://{}.api.blizzard.com/sc2/ladder/season/{}"
-        for index, region in enumerate(self.regions, start=1):
-            region_url = get_season_number_url.format(region, index)
-            task = asyncio.ensure_future(self.fetch(region_url))
-            tasks.append(task)
-        responses = await asyncio.gather(*tasks)
-
-        self.season_numbers = {region: response["seasonId"] for region, response in zip(self.regions, responses)}
-        self.season_start = max(int(response["startDate"]) for response in responses)
-        self.season_end = max(int(response["endDate"]) for response in responses)
-        self.season_max = max(self.season_numbers.values())
-
-        return self.season_max
-
-    async def get_api_data(self, region, season_number, queue_id, teamtype, league_id, fetch_delay: float = 0):
-        # url = "https://{}.api.battle.net/data/sc2/league/{}/{}/{}/{}?access_token={}".format(region, season_number, queue_id, teamtype, league_id, self.token)
-        url = "https://{}.api.blizzard.com/data/sc2/league/{}/{}/{}/{}?locale=en_US&".format(
-            region, season_number, queue_id, teamtype, league_id,
+        # Grab statistics from individual player profiles
+        race_league_statistics = await get_sc2_legacy_ladder_api_data(
+            self.client, self.token, self.delay_per_fetch, prepared_data
         )
 
-        logger.info(f"Fetching api data {url}")
-        response = await self.fetch(url, fetch_delay)
-        return response
+        # Generate the tables
+        mmr_tables = await create_mmr_tables(prepared_data)
 
-    async def get_all_data(self):
-        tasks = []
-        total_responses = []
-        function_call_count = 0
-        season_max = max(self.season_numbers.values())
-        for region in self.season_numbers:
-            # Only show the last 8 seasons because the HTML gets too wide otherwise
-            season_min = max(season_max - 8, self.season_min)
-            for season_number in range(season_min, season_max + 1):
-                for queue_id in self.queue_ids:
-                    for team_type in self.team_types:
-                        # Skip GM
-                        for league_id in self.league_ids[1:]:
-                            task = asyncio.ensure_future(
-                                self.get_api_data(
-                                    region,
-                                    season_number,
-                                    queue_id,
-                                    team_type,
-                                    league_id,
-                                    fetch_delay=self.delay_per_fetch * function_call_count,
-                                )
-                            )
-                            tasks.append(task)
-                            function_call_count += 1
+        # Write data to files
+        data_folder = Path(__file__).parent / "src" / "data"
 
-            total_responses = await asyncio.gather(*tasks)
-        logger.info(f"Api data pulled, total number of calls: {function_call_count}")
-        self.responses = total_responses
-        return total_responses
-
-    async def get_gm_data(self):
-        for index, region in enumerate(self.regions, start=1):
-            response = await self.client.get(
-                f"https://us.api.blizzard.com/sc2/ladder/grandmaster/{index}?access_token={self.token}"
-            )
-            # If GM is not open yet, ignore
-            if response.status != 200:
-                continue
-            json_data = await response.json()
-            if json_data.get("code", 200) == 200:
-                # "mmr" entry might be missing
-                try:
-                    min_mmr = min(member["mmr"] for member in json_data["ladderTeams"] if "mmr" in member)
-                    max_mmr = max(member["mmr"] for member in json_data["ladderTeams"] if "mmr" in member)
-                except ValueError:
-                    # Sequence might be empty
-                    continue
-                # fmt: off
-                response_data = {
-                    # Season
-                    str(self.season_max): {
-                        # Queue id, 201 for 1v1
-                        "201": {
-                            # League id, 6 for GM
-                            "6": {
-                                # Tier id
-                                "": {
-                                    # Region
-                                    region: {
-                                        "min_rating": min_mmr,
-                                        "max_rating": max_mmr,
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                # fmt: on
-                self.data = self.update_nested_dict(self.data, response_data)
-
-    def update_nested_dict(self, my_dict, new_dict):
-        for k, v in new_dict.items():
-            if isinstance(my_dict, collections.Mapping):
-                if isinstance(v, collections.Mapping):
-                    r = self.update_nested_dict(my_dict.get(k, {}), v)
-                    my_dict[k] = r
-                else:
-                    my_dict[k] = new_dict[k]
-            else:
-                my_dict = {k: new_dict[k]}
-        return my_dict
-
-    def prepare_response_data(self):
-        for response in self.responses:
-            # There was an error in the response, empty dict is returned
-            if response == {}:
-                continue
-
-            if response.get("code", 200) == 200:
-                # total season id, in general each year has 4-6 seasons
-                season_id: int = str(response["key"]["season_id"])
-                # the game type, e.g. 1v1 2v2 for [201, 202, 203, 204, 206] 206 being archon
-                queue_id: int = str(response["key"]["queue_id"])
-                region: str = response["_links"]["self"]["href"].lstrip("https:").lstrip("/")[:2]
-                # league id 0 is bronze, league id 5 is master
-                league_id: int = str(response["key"]["league_id"])
-                team_type: int = str(response["key"]["team_type"])  # arranged team or random
-                # tier 0 in api is tier 1 on ladder, tier 2 in api is tier 3 on ladder
-                tiers = {
-                    tier["id"]: {"min_rating": tier["min_rating"], "max_rating": tier["max_rating"]}
-                    for tier in response["tier"]
-                }
-
-                response_data = {
-                    season_id: {
-                        queue_id: {league_id: {str(tierid): {region: tierData} for tierid, tierData in tiers.items()}}
-                    }
-                }
-
-                self.data = self.update_nested_dict(self.data, response_data)
-        logger.info("Data prepared")
-        return self.data
-
-    def verify_response_data(self):
-        assert (
-            self.season_numbers["us"] == self.season_numbers["eu"] == self.season_numbers["kr"]
-        ), f"Season change going on. Current season numbers: {self.season_numbers}"
-
-        # One season will be dismissed
-        expected_amount = 9
-        assert (
-            len(self.data) <= expected_amount
-        ), f"Amount of fetched seasons {len(self.data)} does not match the expected amount of {expected_amount}"
-
-        for season_id, queue_data in self.data.items():
-            assert (
-                len(queue_data) == 5
-            ), f"Something wrong with the amount of received queue data for season {season_id}, only received {len(queue_data)} values instead of expected 5"
-            for queue_id, league_data in queue_data.items():
-                assert len(league_data) in {
-                    6,
-                    7,
-                }, f"Something wrong with the amount of received league data for season {season_id}, only received {len(league_data)} values instead of expected 6 or 7"
-                for league_id, server_data in league_data.items():
-                    assert len(server_data) in {
-                        1,
-                        3,
-                    }, f"Something wrong with the amount of received server data for season {season_id}, only received {len(server_data)} values instead of expected 1 (for GM) or 3"
-        return True
-
-    def verify_new_data_different_from_old_data(self):
-        logger.info("Comparing new data with old data...")
-        if self.data_json_path.exists():
-            with open(self.data_json_path) as f:
-                old_data = json.load(f)
-        else:
-            return True
-
-        # logger.info(f"Until now, everything took {time.perf_counter() - self.t0:.2f} seconds")
-
-        # Dictionary comparison
-        if self.data != old_data:
-            logger.info("New data is different!")
-            return True
-        logger.info("New data is the same as old data.")
-        return False
-
-    def write_json_data(self):
-        logger.info(f"Writing json data to: {self.data_json_path}")
-        with open(self.data_json_path, "w") as f:
-            json.dump(self.data, f, indent=2, sort_keys=True)
-
-    @property
-    def file_start(self):
-        return """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-
-    <title>
-        MMR Ranges in StarCraft 2
-    </title>
-
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-
-</head>
-
-<body>
-
-
-<div class="container">
-    <div class="row justify-content-center">
-        <h1 class="text-center btn-light">MMR Ranges - Last update: {0}</h1>
-    </div>
-    <div class="row justify-content-center">
-        <div class="col-auto">
-            <table class="table table-hover text-center">
-                <tbody >
-                    <tr>
-                        <th class="btn-secondary btn-md" scope="row">Season number:</th>
-                        <td class="btn-light btn-md">{1}</td>
-                    </tr>
-                    <tr>
-                        <th class="btn-secondary btn-md" scope="row">Season start:</th>
-                        <td class="btn-light btn-md">{2}</td>
-                    </tr>
-                    <tr>
-                        <th class="btn-secondary btn-md" scope="row">Season end:</th>
-                        <td class="btn-light btn-md">{3}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="col justify-content-center">
-"""
-
-    @property
-    def fileEnd(self):
-        return """  
-</div>
-
-<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
-
-</body>
-
-<footer>
-
-</footer>
-</html>
-"""
-
-    @property
-    def get_dropdown_navbar(self):
-
-        start = """
-    <div class="row justify-content-center">
-        <div class="col-auto">
-            <ul class="nav nav-tabs">
-"""
-        end = """
-            </ul>
-        </div>
-    </div>
-"""
-        dropdown_template = """
-                <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle{0}" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">{1}</a>
-                    <div class="dropdown-menu">
-                        <a class="dropdown-item{0}" href="#{2}" data-toggle="tab">{7}</a>
-                        <a class="dropdown-item" href="#{3}" data-toggle="tab">{8}</a>
-                        <a class="dropdown-item" href="#{4}" data-toggle="tab">{9}</a>
-                        <a class="dropdown-item" href="#{5}" data-toggle="tab">{10}</a>
-                        <a class="dropdown-item" href="#{6}" data-toggle="tab">{11}</a>
-                    </div>
-                </li>
-"""
-
-        # Last and previous season are identical for some reason, so skip first season
-        seasons = sorted(list(self.data.keys()), key=lambda x: int(x))[1:]
-        hqueue_ids = [self.hqueue_ids[queue_id] for queue_id in self.queue_ids]
-        navbarContent = start
-        for season in seasons:
-            season_queue_ids = [season + self.hqueue_ids[queue_id] for queue_id in self.queue_ids]
-            # logger.info(len(hqueue_ids), len(season_queue_ids), self.queue_ids, season, type(self.queue_ids[0]), type(season))
-            if season == seasons[-1]:
-                navbarContent += dropdown_template.format(
-                    " active", "Season {}".format(season), *season_queue_ids, *hqueue_ids
-                )
-            else:
-                navbarContent += dropdown_template.format(
-                    "", "Season {}".format(season), *season_queue_ids, *hqueue_ids
-                )
-        navbarContent += end
-        # logger.info("navbarcontent\n", navbarContent)
-        return navbarContent
-
-    def create_season_gametype_table(self, season, queue_id, data2, active=False, indention=0):
-        tableStart = """    
-    <div class="tab-pane{1}" id="{0}" role="tabpanel" aria-labelledby="{0}">
-        <div class="row justify-content-center">
-            <div class="col-auto">
-                <table class="table table-hover text-center">
-                    <thead>
-                        <th scope="col">Server</th>
-                        <th scope="col">Americas</th>
-                        <th scope="col">Europe</th>
-                        <th scope="col">Korea</th>
-                    </thead>
-                    <tbody>
-"""
-        if active:
-            tableStart = tableStart.format(season + self.hqueue_ids[queue_id], " active")
-        else:
-            tableStart = tableStart.format(season + self.hqueue_ids[queue_id], "")
-
-        tableEnd = """
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-"""
-        rowStart = "<tr>\n"
-        rowEnd = "</tr>\n"
-        columnEntryTemplate = '<th scope="row">{}</th>\n'
-
-        tableContent = tableStart
-        for league_id, data3 in data2.items():
-            for tierid, data4 in data3.items():
-                tableContent += "\t" * indention + rowStart
-                # Exception for GM which has no tiers
-                # if len(data2) == 1:
-                if tierid == "":
-                    firstColumn = "{}".format(self.hleague_ids[league_id])
-                else:
-                    firstColumn = "{} {}".format(self.hleague_ids[league_id], self.htier[tierid])
-                tableContent += "\t" * (indention + 1) + columnEntryTemplate.format(firstColumn)
-                region_data = {
-                    "us": "",
-                    "eu": "",
-                    "kr": "",
-                }
-                for region, rating in data4.items():
-                    region_data[region] = "{} - {}".format(rating["min_rating"], rating["max_rating"])
-                # Write us, then eu, then kr content
-                tableContent += "\t" * (indention + 1) + columnEntryTemplate.format(region_data["us"])
-                tableContent += "\t" * (indention + 1) + columnEntryTemplate.format(region_data["eu"])
-                tableContent += "\t" * (indention + 1) + columnEntryTemplate.format(region_data["kr"])
-                tableContent += "\t" * indention + rowEnd
-        tableContent += tableEnd
-
-        return tableContent
-
-    def get_title_data(self):
-        t = arrow.now("UTC")
-        time_for_title = t.format("dddd YYYY-MM-DD HH:mm")
-        # time_for_title = t.format("dddd YYYY-MM-DD HH:mm ZZ")
-
-        season_number = self.season_max
-
-        t = arrow.Arrow.fromtimestamp(self.season_start)
-        season_start_date = t.format("dddd YYYY-MM-DD")
-
-        t = arrow.Arrow.fromtimestamp(self.season_end)
-        season_end_date = t.format("dddd YYYY-MM-DD")
-
-        return time_for_title, season_number, season_start_date, season_end_date
-
-    def build_html_file(self, title_data):
-        """ Returns content of HTML file """
-        content = ""
-
-        # file start
-        # title with last update time stamp
-        content += self.file_start.format(*title_data)
-
-        # build season+gametype dropdown navbar
-        content += self.get_dropdown_navbar
-
-        # build content for each season number + game type combo
-        content += """<div class="tab-content">"""
-        for season, data1 in self.data.items():
-            # Last and previous season are identical for some reason, so everything is offset by 1, and skip most recent season
-            logger.info(f"Building HTML, season: {season}")
-            for queue_id, data2 in data1.items():
-                boolean = season == str(self.season_max) and queue_id == self.queue_ids[0]
-                content += self.create_season_gametype_table(str(season), queue_id, data2, active=boolean, indention=6)
-        content += """</div>"""
-
-        # write info about donation, contact, and pythonanywhere website alternative
-        # file end
-        content += self.fileEnd
-
-        return content
-
-    def write_to_html(self, content):
-        logger.info("Writing html file...")
-        folder_path = os.path.dirname(self.index_html_path)
-        if not self.index_html_path.parent.exists():
-            logger.info(f"Creating folder for html file: {folder_path}")
-            os.makedirs(folder_path)
-        logger.info(f"Writing html file to {self.index_html_path}")
-        with open(self.index_html_path, "w+") as f:
-            f.write(content)
+        os.makedirs(data_folder, exist_ok=True)
+        with open(data_folder / "data_header.json", "w") as f:
+            json.dump(convert_header_data_to_json(season_info), f, indent=4)
+        with open(data_folder / "data_mmr_table.json", "w") as f:
+            json.dump(mmr_tables, f, indent=4)
+        with open(data_folder / "data_avg_games_table.json", "w") as f:
+            json.dump(race_league_statistics["avg_games"], f, indent=4)
+        with open(data_folder / "data_avg_winrate_table.json", "w") as f:
+            json.dump(race_league_statistics["avg_winrate"], f, indent=4)
 
 
 async def main():
     async with aiohttp.ClientSession() as client:
         mmrranges = MMRranges(client)
-        await mmrranges.get_access_token()
-        await mmrranges.get_min_season()
-        await mmrranges.get_season_number()
-        title_data = mmrranges.get_title_data()
-        await mmrranges.get_all_data()
-        await mmrranges.get_gm_data()
-        mmrranges.prepare_response_data()
-        mmrranges.verify_response_data()
-        if mmrranges.verify_new_data_different_from_old_data():
-            mmrranges.write_json_data()
-            content = mmrranges.build_html_file(title_data)
-            mmrranges.write_to_html(content)
-            exit(0)
-        # Error, don't continue next step in github actions
-        exit(1)
+        await mmrranges.async_init()
+        await mmrranges.run()
 
 
 if __name__ == "__main__":

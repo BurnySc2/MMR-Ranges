@@ -107,6 +107,14 @@ version = "2.4"
 immutables = ">=0.9"
 
 [[package]]
+category = "main"
+description = "Filesystem-like pathing and searching for dictionaries"
+name = "dpath"
+optional = false
+python-versions = "*"
+version = "2.0.1"
+
+[[package]]
 category = "dev"
 description = "A library for property-based testing"
 name = "hypothesis"
@@ -372,7 +380,8 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "652f141c121d90a6de35326e6d8ec03eea26c22273f2172d3f1b54809167629d"
+content-hash = "bf2505761b092f6ebc752411639e4cdfa7a24f11237df3eb690d031a63205a22"
+lock-version = "1.0"
 python-versions = "^3.6"
 
 [metadata.files]
@@ -420,6 +429,9 @@ colorama = [
 ]
 contextvars = [
     {file = "contextvars-2.4.tar.gz", hash = "sha256:f38c908aaa59c14335eeea12abea5f443646216c4e29380d7bf34d2018e2c39e"},
+]
+dpath = [
+    {file = "dpath-2.0.1.tar.gz", hash = "sha256:bea06b5f4ff620a28dfc9848cf4d6b2bfeed34238edeb8ebe815c433b54eb1fa"},
 ]
 hypothesis = [
     {file = "hypothesis-5.8.0-py3-none-any.whl", hash = "sha256:84671369a278088f1d48f7ed2aca7975550344fa744783fe6cb84ad5f3f55ff2"},

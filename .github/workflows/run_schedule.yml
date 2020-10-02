@@ -2,7 +2,7 @@ name: Build_Schedule
 
 on:
   schedule:
-    - cron: "20 3,15 * * *"
+    - cron: "20 4,16 * * *"
 
 jobs:
   build:
@@ -12,9 +12,13 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         python-version: [3.7]
+        node: [ '10' ]
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '10.x'
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v1
@@ -24,17 +28,25 @@ jobs:
       # Use pip requirements.txt cache https://github.com/actions/cache/blob/master/examples.md#python---pip
       # Apparently you can't use cache when using pipenv (but perhaps when specifying the pipenv environment folder?)
 
-      - name: Install poetry
+      - name: Install poetry (python)
         run: |
           python -m pip install poetry
 
-      - name: Install dependencies
+      - name: Install dependencies (python)
         run: |
           poetry install
 
-      - name: Create data table and website
+      - name: Install dependencies (npm)
+        run: |
+          npm install
+
+      - name: Create data tables (python)
         run: |
           poetry run python main.py ${{ secrets.CLIENT_ID }} ${{ secrets.CLIENT_SECRET }}
+
+      - name: Create website (npm)
+        run: |
+          npm run build
 
       - name: Publish to Github Pages
         if: github.ref == 'refs/heads/master'
@@ -43,6 +55,6 @@ jobs:
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
           BASE_BRANCH: master # The branch the action should deploy from.
           BRANCH: gh-pages # The branch the action should deploy to.
-          FOLDER: website # The folder the action should deploy.
+          FOLDER: build # The folder the action should deploy.
 
 
