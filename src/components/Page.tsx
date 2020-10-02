@@ -21,7 +21,7 @@ export default class Page extends Component<Props, State> {
         let topic_class = "m-2 bg-blue-100 border rounded-lg"
         let topic_description_text = "font-bold"
         let selectable_section_class = "flex flex-row justify-center"
-        let selectable_item_class = "px-3 py-1 hover:bg-blue-600 rounded-full cursor-pointer"
+        let selectable_item_class = "px-3 py-1 hover:bg-blue-600 rounded-lg cursor-pointer"
         let selected_class = "bg-blue-500"
 
         return (
