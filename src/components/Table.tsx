@@ -11,9 +11,6 @@ export default class Table extends Component<Props, State> {
     state = {}
 
     render() {
-        if (!this.props.enabled) {
-            return <div></div>
-        }
         // console.log(this.props.data)
         let content_class = "flex flex-col items-center"
         let table_class = "table-fixed"
@@ -39,6 +36,10 @@ export default class Table extends Component<Props, State> {
 
         let table_full = <table className={table_class}>{table}</table>
 
-        return <div className={content_class}>{table_full}</div>
+        return (
+            <div className={`${content_class} ${this.props.enabled ? "" : "hidden"}`}>
+                {table_full}
+            </div>
+        )
     }
 }

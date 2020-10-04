@@ -33,7 +33,9 @@ async def get_current_season_info(client: aiohttp.ClientSession, access_token: s
         urls.append(get_season_number_url.format(region, index))
     responses = await fetch_multiple(client, access_token, urls, fetch_delay=0)
 
-    # season_numbers = {region: response["seasonId"] for region, response in zip(regions, responses)}
+    season_numbers = {region: response["seasonId"] for region, response in zip(REGIONS, responses)}
+    logger.info(f"Season numbers are: {season_numbers}")
+
     season_start = max(int(response["startDate"]) for response in responses)
     season_end = max(int(response["endDate"]) for response in responses)
     season_number = max(int(response["seasonId"]) for response in responses)

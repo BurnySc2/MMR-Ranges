@@ -16,13 +16,19 @@ export default class Page extends Component<Props, State> {
         active: 0,
     }
 
+    selected = (index: number) => {
+        if (index === this.state.active) {
+            return "bg-blue-500"
+        }
+        return ""
+    }
+
     render() {
         let section_class = "flex md:flex-row flex-col justify-center text-center items-center"
         let topic_class = "m-2 bg-blue-100 border rounded-lg"
         let topic_description_text = "font-bold"
         let selectable_section_class = "flex flex-row justify-center"
         let selectable_item_class = "px-3 py-1 hover:bg-blue-600 rounded-lg cursor-pointer"
-        let selected_class = "bg-blue-500"
 
         return (
             <div>
@@ -36,9 +42,7 @@ export default class Page extends Component<Props, State> {
                             <div className={topic_description_text}>MMR</div>
                             <div className={selectable_section_class}>
                                 <div
-                                    className={`${selectable_item_class} ${
-                                        this.state.active === 0 ? selected_class : null
-                                    }`}
+                                    className={`${selectable_item_class} ${this.selected(0)}`}
                                     onClick={() => {
                                         this.setState({ active: 0 })
                                     }}
@@ -46,9 +50,7 @@ export default class Page extends Component<Props, State> {
                                     1v1
                                 </div>
                                 <div
-                                    className={`${selectable_item_class} ${
-                                        this.state.active === 1 ? selected_class : null
-                                    }`}
+                                    className={`${selectable_item_class} ${this.selected(1)}`}
                                     onClick={() => {
                                         this.setState({ active: 1 })
                                     }}
@@ -56,9 +58,7 @@ export default class Page extends Component<Props, State> {
                                     2v2
                                 </div>
                                 <div
-                                    className={`${selectable_item_class} ${
-                                        this.state.active === 2 ? selected_class : null
-                                    }`}
+                                    className={`${selectable_item_class}  ${this.selected(2)}`}
                                     onClick={() => {
                                         this.setState({ active: 2 })
                                     }}
@@ -66,9 +66,7 @@ export default class Page extends Component<Props, State> {
                                     3v3
                                 </div>
                                 <div
-                                    className={`${selectable_item_class} ${
-                                        this.state.active === 3 ? selected_class : null
-                                    }`}
+                                    className={`${selectable_item_class}  ${this.selected(3)}`}
                                     onClick={() => {
                                         this.setState({ active: 3 })
                                     }}
@@ -76,9 +74,7 @@ export default class Page extends Component<Props, State> {
                                     4v4
                                 </div>
                                 <div
-                                    className={`${selectable_item_class} ${
-                                        this.state.active === 4 ? selected_class : null
-                                    }`}
+                                    className={`${selectable_item_class}  ${this.selected(4)}`}
                                     onClick={() => {
                                         this.setState({ active: 4 })
                                     }}
@@ -91,9 +87,7 @@ export default class Page extends Component<Props, State> {
                             <div className={topic_description_text}>Player statistics</div>
                             <div className={selectable_section_class}>
                                 <div
-                                    className={`${selectable_item_class} ${
-                                        this.state.active === 101 ? selected_class : null
-                                    }`}
+                                    className={`${selectable_item_class}  ${this.selected(101)}`}
                                     onClick={() => {
                                         this.setState({ active: 101 })
                                     }}
@@ -101,9 +95,7 @@ export default class Page extends Component<Props, State> {
                                     Average games
                                 </div>
                                 <div
-                                    className={`${selectable_item_class} ${
-                                        this.state.active === 102 ? selected_class : null
-                                    }`}
+                                    className={`${selectable_item_class}  ${this.selected(102)}`}
                                     onClick={() => {
                                         this.setState({ active: 102 })
                                     }}

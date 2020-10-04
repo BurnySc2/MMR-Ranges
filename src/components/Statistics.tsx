@@ -13,6 +13,13 @@ export default class Statistics extends Component<Props, State> {
         active: 0,
     }
 
+    selected = (index: number) => {
+        if (index === this.state.active) {
+            return "bg-blue-500"
+        }
+        return ""
+    }
+
     format_table = (table: Array<string[]>) => {
         let table_class = "table-fixed"
         let table_row_class = "hover:bg-gray-400"
@@ -33,12 +40,8 @@ export default class Statistics extends Component<Props, State> {
     }
 
     render() {
-        if (!this.props.enabled) {
-            return <div></div>
-        }
         let selector_row = "flex flex-row m-2 bg-blue-100 border rounded-lg"
         let selectable_item_class = "px-3 py-1 hover:bg-blue-600 rounded-lg cursor-pointer"
-        let selected_class = "bg-blue-500"
 
         let content_class = ""
         let hidden_class = "hidden"
@@ -48,12 +51,10 @@ export default class Statistics extends Component<Props, State> {
         let table_kr = this.format_table(this.props.data["kr"])
 
         return (
-            <div className="flex flex-col items-center">
+            <div className={`flex flex-col items-center ${this.props.enabled ? "" : "hidden"}`}>
                 <div className={selector_row}>
                     <div
-                        className={`${selectable_item_class} ${
-                            this.state.active === 0 ? selected_class : null
-                        }`}
+                        className={`${selectable_item_class} ${this.selected(0)}`}
                         onClick={() => {
                             this.setState({ active: 0 })
                         }}
@@ -61,9 +62,7 @@ export default class Statistics extends Component<Props, State> {
                         Americas
                     </div>
                     <div
-                        className={`${selectable_item_class} ${
-                            this.state.active === 1 ? selected_class : null
-                        }`}
+                        className={`${selectable_item_class} ${this.selected(1)}`}
                         onClick={() => {
                             this.setState({ active: 1 })
                         }}
@@ -71,9 +70,7 @@ export default class Statistics extends Component<Props, State> {
                         Europe
                     </div>
                     <div
-                        className={`${selectable_item_class} ${
-                            this.state.active === 2 ? selected_class : null
-                        }`}
+                        className={`${selectable_item_class} ${this.selected(2)}`}
                         onClick={() => {
                             this.setState({ active: 2 })
                         }}
