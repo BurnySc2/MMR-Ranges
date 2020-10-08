@@ -7,6 +7,9 @@ import asyncio
 import re
 import json
 import arrow
+from dpath.util import get, new, merge
+
+from copy import deepcopy
 
 from .helper import fetch_multiple
 from .constants import *
@@ -25,3 +28,35 @@ async def get_sc2_gm_api_data(client: aiohttp.ClientSession, access_token: str, 
     with open("data_gm_api.json", "w") as f:
         json.dump(responses, f, indent=4, sort_keys=True)
     return responses
+
+
+async def mix_gm_data(prepared_data, gm_borders):
+    merge(prepared_data, gm_borders)
+    with open("data_ladder_api_with_gm.json", "w") as f:
+        json.dump(prepared_data, f, indent=4, sort_keys=True)
+    return prepared_data
+
+
+async def get_gm_borders(gm_data: dict):
+    gm_table_info = {}
+    for index, region in enumerate(REGIONS):
+        # No GM data could be retrieved
+        if not gm_data[index]:
+            continue
+        ladder_teams = gm_data[index]["ladderTeams"]
+        rank190: list = deepcopy(ladder_teams)
+        # Sometimes, some players don't seem to have mmr
+        rank190 = [i for i in rank190 if "mmr" in i]
+        # Sort descending
+        rank190.sort(key=lambda x: x["mmr"], reverse=True)
+        rank190 = rank190[:190]
+        # GM somehow doesnt have at least one member
+        if not rank190:
+            continue
+        max_mmr = rank190[0]["mmr"]
+        min_mmr = rank190[-1]["mmr"]
+
+        new(gm_table_info, ["201", "6", "0", region, "min_rating"], min_mmr)
+        new(gm_table_info, ["201", "6", "0", region, "max_rating"], max_mmr)
+
+    return gm_table_info

@@ -140,3 +140,5 @@ avg_winrate_table.json
 data_ladder_api.json
 data_table_raw.json
 formatted_table.json
+data_gm_api.json
+data_ladder_api_with_gm.json
