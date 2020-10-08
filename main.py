@@ -29,7 +29,7 @@ from gather.create_header import get_current_season_info, convert_header_data_to
 from gather.get_api_data import get_sc2_league_api_data
 
 from gather.create_tables import prepare_mmr_table_data, create_mmr_tables
-from gather.get_gm_data import get_sc2_gm_api_data
+from gather.get_gm_data import get_sc2_gm_api_data, get_gm_borders, mix_gm_data
 
 """
 ladder API:
@@ -130,12 +130,6 @@ class MMRranges:
         else:
             _, self.MY_CLIENT_ID, self.MY_CLIENT_SECRET = sys.argv
 
-        # data_folder = directory / "src" / "data"
-        # self.raw_data_json_path = data_folder / "data_raw.json"
-        # self.mmr_data_json_path = data_folder / "data_mmr.json"
-        # self.gm_data_json_path = data_folder / "data_gm.json"
-        # self.stats_data_json_path = data_folder / "data_stats.json"
-
         # API rate limit
         self.rate_limit = 50  # x calls per second, can be up to 100 per second
         self.delay_per_fetch = 1 / self.rate_limit
@@ -149,15 +143,16 @@ class MMRranges:
         ladders_api_info = await get_sc2_league_api_data(
             self.client, self.token, season_info.season_number, self.delay_per_fetch
         )
-        # gm_info = await get_sc2_gm_api_data(self.client, self.token, self.delay_per_fetch)
+        gm_data = await get_sc2_gm_api_data(self.client, self.token, self.delay_per_fetch)
+        gm_borders = await get_gm_borders(gm_data)
 
         # Format the received data into a readable shape
         prepared_data = await prepare_mmr_table_data(ladders_api_info)
-        # TODO Mix GM data into prepared_data
+        prepared_data = await mix_gm_data(prepared_data, gm_borders)
 
         # Grab statistics from individual player profiles
         race_league_statistics = await get_sc2_legacy_ladder_api_data(
-            self.client, self.token, self.delay_per_fetch, prepared_data
+            self.client, self.token, self.delay_per_fetch, prepared_data, gm_data
         )
 
         # Generate the tables
@@ -185,12 +180,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    loop: asyncio.BaseEventLoop = asyncio.get_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        loop.run_until_complete(main())
-    finally:
-        loop.close()
-
-    # In Python 3.7 it is just::
-    # asyncio.run(main())
+    asyncio.run(main())
