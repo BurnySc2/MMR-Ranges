@@ -191,10 +191,8 @@ async def add_gm_stats(gm_data, avg_games_table, avg_winrate_table):
         if total_players == 0:
             continue
 
-        # Add total average row
-        new_row_avg_games.append(
-            f"{round((total_wins / (total_wins + total_losses)) / total_players, AVG_GAMES_ROUNDING)}"
-        )
+        # Add total average to row
+        new_row_avg_games.append(f"{round((total_wins + total_losses) / total_players, AVG_GAMES_ROUNDING)}")
 
         avg_games_table[f"{region_name}"].insert(1, new_row_avg_games)
         avg_winrate_table[f"{region_name}"].insert(1, new_row_avg_winrate)
