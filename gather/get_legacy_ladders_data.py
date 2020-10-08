@@ -58,8 +58,6 @@ async def get_sc2_legacy_ladder_api_data(
                     # Skip if it doesnt exist, e.g. for GM when GM is locked
                     if not get(prepared_data, f"{mode}/{league_id}/{tier_id}", default={}):
                         continue
-                    # if not get(prepared_data, f"{mode}/{league_id}/{tier_id}/{region_name}", default={}):
-                    #     continue
 
                     new_row_avg_games = [ROW_DESCRIPTIONS[row_number]]
                     new_row_avg_winrate = [ROW_DESCRIPTIONS[row_number]]
