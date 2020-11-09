@@ -17,6 +17,14 @@ def get_percentage(fraction: float, decimal_places: int = 2) -> str:
     return f"{round(fraction * 100, decimal_places)} %"
 
 
+def display_large_numbers(big_number: int) -> str:
+    if big_number > 10_000_000:
+        return f"{int(round(big_number / 10**6))}m"
+    if big_number > 10_000:
+        return f"{int(round(big_number / 10**3))}k"
+    return f"{big_number}"
+
+
 def get_avg_games_entry(wins: dict, losses: dict, profiles: dict, race: str) -> str:
     """ Calculate the average games per race. If race=='TOTAL', calculate the total average (not the sum of all 4 averages). """
     if race == "TOTAL":
@@ -50,6 +58,7 @@ def get_total_games_entry(wins: dict, losses: dict, race: str) -> str:
         total_games = wins.get(race, 0) + losses.get(race, 0)
     if total_games == 0:
         return "-"
+    # return display_large_numbers(total_games)
     return str(total_games)
 
 
@@ -119,9 +128,11 @@ async def get_sc2_legacy_ladder_api_data(
                                 )
                                 profiles_with_no_favorite_race_p1 += 1
                                 continue
+
                             wins = profile["wins"]
                             losses = profile["losses"]
                             race = profile["favoriteRaceP1"][0]
+
                             # Load old data from dict
                             total_race_wins = get(league_tier_wins, f"{race}", default=0)
                             total_race_losses = get(league_tier_losses, f"{race}", default=0)
@@ -166,7 +177,7 @@ async def get_sc2_legacy_ladder_api_data(
         total_games_table[f"{region_name}"] = new_table_total_games
 
     # Add GM stats
-    await add_gm_stats(gm_data, avg_games_table, avg_winrate_table)
+    await add_gm_stats(gm_data, avg_games_table, total_games_table, avg_winrate_table)
 
     # Debugging blizzard API
     if total_profiles > 0:
@@ -195,23 +206,25 @@ async def get_sc2_legacy_ladder_api_data(
     }
 
 
-async def add_gm_stats(gm_data, avg_games_table, avg_winrate_table):
+async def add_gm_stats(gm_data, avg_games_table, total_games_table, avg_winrate_table):
     # Add GM stats
     for region_id, region_name in enumerate(REGIONS, start=1):
         new_row_avg_games = [ROW_DESCRIPTIONS[-1]]
+        new_row_total_games = [ROW_DESCRIPTIONS[-1]]
         new_row_avg_winrate = [ROW_DESCRIPTIONS[-1]]
 
         # Parse GM data
         region_players = get(gm_data, [str(region_id - 1), "ladderTeams"], default=[])
         if not region_players:
             new_row_avg_games.append("-")
+            new_row_total_games.append("-")
             new_row_avg_winrate.append("-")
         total_wins = 0
         total_losses = 0
         total_players = 0
 
         for race in RACES:
-            # Count players, skip if equal to 0
+            # Count players, skip if equal to 0 (e.g. no random players in GM)
             players_with_that_race = len(
                 [
                     player
@@ -223,6 +236,7 @@ async def add_gm_stats(gm_data, avg_games_table, avg_winrate_table):
             if players_with_that_race == 0:
                 new_row_avg_games.append("-")
                 new_row_avg_winrate.append("-")
+                new_row_total_games.append("-")
                 continue
 
             wins = sum(
@@ -237,10 +251,12 @@ async def add_gm_stats(gm_data, avg_games_table, avg_winrate_table):
                 if "favoriteRace" in player["teamMembers"][0]
                 and player["teamMembers"][0]["favoriteRace"][0].lower() == race.lower()
             )
+
             total_wins += wins
             total_losses += losses
             total_players += players_with_that_race
             new_row_avg_games.append(f"{round((wins + losses) / players_with_that_race, AVG_GAMES_ROUNDING)}")
+            new_row_total_games.append(f"{wins + losses}")
             new_row_avg_winrate.append(f"{round(100 * wins / (wins + losses), AVG_WINRATE_ROUNDING)}")
 
         # Do not add any row if there are 0 players or no stats
@@ -250,5 +266,9 @@ async def add_gm_stats(gm_data, avg_games_table, avg_winrate_table):
         # Add total average to row
         new_row_avg_games.append(f"{round((total_wins + total_losses) / total_players, AVG_GAMES_ROUNDING)}")
 
+        # Add total games to row
+        new_row_total_games.append(f"{total_wins + total_losses}")
+
         avg_games_table[f"{region_name}"].insert(1, new_row_avg_games)
+        total_games_table[f"{region_name}"].insert(1, new_row_total_games)
         avg_winrate_table[f"{region_name}"].insert(1, new_row_avg_winrate)

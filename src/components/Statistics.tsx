@@ -6,15 +6,9 @@ interface Props {
     selected_region: number
     select_region: (index: number) => void
 }
-interface State {
-    // active: number
-}
+interface State {}
 
 export default class Statistics extends Component<Props, State> {
-    // state = {
-    //     active: 0,
-    // }
-
     selected = (index: number) => {
         if (index === this.props.selected_region) {
             return "bg-blue-500"
