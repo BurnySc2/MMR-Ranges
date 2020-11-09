@@ -170,6 +170,8 @@ class MMRranges:
             json.dump(race_league_statistics["avg_games"], f, indent=4)
         with open(data_folder / "data_avg_winrate_table.json", "w") as f:
             json.dump(race_league_statistics["avg_winrate"], f, indent=4)
+        with open(data_folder / "data_total_games_table.json", "w") as f:
+            json.dump(race_league_statistics["total_games"], f, indent=4)
 
 
 async def main():

@@ -3,18 +3,20 @@ import React, { Component } from "react"
 interface Props {
     data: { [name: string]: Array<string[]> }
     enabled: boolean
+    selected_region: number
+    select_region: (index: number) => void
 }
 interface State {
-    active: number
+    // active: number
 }
 
 export default class Statistics extends Component<Props, State> {
-    state = {
-        active: 0,
-    }
+    // state = {
+    //     active: 0,
+    // }
 
     selected = (index: number) => {
-        if (index === this.state.active) {
+        if (index === this.props.selected_region) {
             return "bg-blue-500"
         }
         return ""
@@ -56,7 +58,7 @@ export default class Statistics extends Component<Props, State> {
                     <div
                         className={`${selectable_item_class} ${this.selected(0)}`}
                         onClick={() => {
-                            this.setState({ active: 0 })
+                            this.props.select_region(0)
                         }}
                     >
                         Americas
@@ -64,7 +66,7 @@ export default class Statistics extends Component<Props, State> {
                     <div
                         className={`${selectable_item_class} ${this.selected(1)}`}
                         onClick={() => {
-                            this.setState({ active: 1 })
+                            this.props.select_region(1)
                         }}
                     >
                         Europe
@@ -72,7 +74,7 @@ export default class Statistics extends Component<Props, State> {
                     <div
                         className={`${selectable_item_class} ${this.selected(2)}`}
                         onClick={() => {
-                            this.setState({ active: 2 })
+                            this.props.select_region(2)
                         }}
                     >
                         Korea
@@ -81,21 +83,21 @@ export default class Statistics extends Component<Props, State> {
                 <div>
                     <div
                         className={`${content_class} ${
-                            this.state.active !== 0 ? hidden_class : null
+                            this.props.selected_region !== 0 ? hidden_class : null
                         }`}
                     >
                         {table_us}
                     </div>
                     <div
                         className={`${content_class} ${
-                            this.state.active !== 1 ? hidden_class : null
+                            this.props.selected_region !== 1 ? hidden_class : null
                         }`}
                     >
                         {table_eu}
                     </div>
                     <div
                         className={`${content_class} ${
-                            this.state.active !== 2 ? hidden_class : null
+                            this.props.selected_region !== 2 ? hidden_class : null
                         }`}
                     >
                         {table_kr}

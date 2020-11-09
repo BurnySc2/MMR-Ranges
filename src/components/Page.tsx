@@ -1,6 +1,8 @@
 import React, { Component } from "react"
+import ReactTooltip from "react-tooltip"
 import data_mmr from "../data/data_mmr_table.json"
 import data_avg_games from "../data/data_avg_games_table.json"
+import data_total_games from "../data/data_total_games_table.json"
 import data_avg_winrate from "../data/data_avg_winrate_table.json"
 import Header from "./Header"
 import Statistics from "./Statistics"
@@ -9,11 +11,15 @@ import Table from "./Table"
 interface Props {}
 interface State {
     active: number
+    selected_region: number
+    tooltipText: string
 }
 
 export default class Page extends Component<Props, State> {
     state = {
         active: 0,
+        selected_region: 0,
+        tooltipText: "",
     }
 
     selected = (index: number) => {
@@ -21,6 +27,10 @@ export default class Page extends Component<Props, State> {
             return "bg-blue-500"
         }
         return ""
+    }
+
+    select_region = (index: number) => {
+        this.setState({ selected_region: index })
     }
 
     render() {
@@ -84,13 +94,18 @@ export default class Page extends Component<Props, State> {
                             </div>
                         </div>
                         <div className={topic_class}>
-                            <div className={topic_description_text}>Player statistics</div>
+                            <div className={topic_description_text}>
+                                Player statistics (this season)
+                            </div>
                             <div className={selectable_section_class}>
                                 <div
                                     className={`${selectable_item_class}  ${this.selected(101)}`}
                                     onClick={() => {
                                         this.setState({ active: 101 })
                                     }}
+                                    // Tooltip
+                                    data-tip={"(total wins + total losses) / player accounts"}
+                                    data-for="globalTooltip"
                                 >
                                     Average games
                                 </div>
@@ -99,6 +114,20 @@ export default class Page extends Component<Props, State> {
                                     onClick={() => {
                                         this.setState({ active: 102 })
                                     }}
+                                    // Tooltip
+                                    data-tip={"total wins + total losses"}
+                                    data-for="globalTooltip"
+                                >
+                                    Total games
+                                </div>
+                                <div
+                                    className={`${selectable_item_class}  ${this.selected(103)}`}
+                                    onClick={() => {
+                                        this.setState({ active: 103 })
+                                    }}
+                                    // Tooltip
+                                    data-tip={"wins / total games"}
+                                    data-for="globalTooltip"
                                 >
                                     Average winrate
                                 </div>
@@ -111,8 +140,26 @@ export default class Page extends Component<Props, State> {
                     <Table data={data_mmr["203"]} enabled={this.state.active === 2} />
                     <Table data={data_mmr["204"]} enabled={this.state.active === 3} />
                     <Table data={data_mmr["206"]} enabled={this.state.active === 4} />
-                    <Statistics data={data_avg_games} enabled={this.state.active === 101} />
-                    <Statistics data={data_avg_winrate} enabled={this.state.active === 102} />
+                    <Statistics
+                        data={data_avg_games}
+                        enabled={this.state.active === 101}
+                        selected_region={this.state.selected_region}
+                        select_region={this.select_region}
+                    />
+                    <Statistics
+                        data={data_total_games}
+                        enabled={this.state.active === 102}
+                        selected_region={this.state.selected_region}
+                        select_region={this.select_region}
+                    />
+                    <Statistics
+                        data={data_avg_winrate}
+                        enabled={this.state.active === 103}
+                        selected_region={this.state.selected_region}
+                        select_region={this.select_region}
+                    />
+                    <ReactTooltip place="bottom" id="globalTooltip" />
+                    {/*{this.state.tooltipText}</ReactTooltip>*/}
                 </div>
             </div>
         )

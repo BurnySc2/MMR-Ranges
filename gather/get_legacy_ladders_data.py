@@ -13,6 +13,10 @@ from .constants import *
 from dpath.util import get, new, merge
 
 
+def get_percentage(fraction: float, decimal_places: int = 2) -> str:
+    return f"{round(fraction * 100, decimal_places)} %"
+
+
 def get_avg_games_entry(wins: dict, losses: dict, profiles: dict, race: str) -> str:
     """ Calculate the average games per race. If race=='TOTAL', calculate the total average (not the sum of all 4 averages). """
     if race == "TOTAL":
@@ -38,19 +42,43 @@ def get_avg_winrate_entry(wins: dict, losses: dict, race: str) -> str:
     return str(round(wins.get(race) / total_games * 100, AVG_WINRATE_ROUNDING))
 
 
+def get_total_games_entry(wins: dict, losses: dict, race: str) -> str:
+    """ Calculate the total games per race. """
+    if race == "TOTAL":
+        total_games = sum(wins.get(race, 0) + losses.get(race, 0) for race in RACES)
+    else:
+        total_games = wins.get(race, 0) + losses.get(race, 0)
+    if total_games == 0:
+        return "-"
+    return str(total_games)
+
+
 async def get_sc2_legacy_ladder_api_data(
     client: aiohttp.ClientSession, access_token: str, fetch_delay: float, prepared_data: dict, gm_data: dict
 ):
     url = "https://{}.api.blizzard.com/sc2/legacy/ladder/{}/{}"
     # url = f"https://{region}.api.blizzard.com/sc2/legacy/ladder/{region_id}/{ladder_id}"
 
+    # Debugging info
+    profiles_with_no_favorite_race_p1 = 0
+    total_profiles = 0
+
     # Each table has keys: us, eu, kr
+
+    # Table with average games per placement-account
     avg_games_table = {}
+
+    # Table with averaage winrate per placement-account
     avg_winrate_table = {}
+
+    # Table with total games
+    total_games_table = {}
 
     for region_id, region_name in enumerate(REGIONS, start=1):
         new_table_avg_games = []
         new_table_avg_winrate = []
+        new_table_total_games = []
+
         for mode in MODES[:1]:
             row_number = 0
             for league_id, league in enumerate(LEAGUES[:6]):
@@ -61,6 +89,7 @@ async def get_sc2_legacy_ladder_api_data(
 
                     new_row_avg_games = [ROW_DESCRIPTIONS[row_number]]
                     new_row_avg_winrate = [ROW_DESCRIPTIONS[row_number]]
+                    new_row_total_games = [ROW_DESCRIPTIONS[row_number]]
                     row_number += 1
 
                     # Get normal non-ladder stats
@@ -79,12 +108,16 @@ async def get_sc2_legacy_ladder_api_data(
 
                     for response in responses:
                         if "ladderMembers" not in response:
-                            logger.error(f"Error with response, no key found with 'ladderMembers")
+                            logger.error(f"Error with response, no key found with 'ladderMembers'")
                             continue
                         for profile in response["ladderMembers"]:
                             # Ignore profile if buggy (race not shown?)
+                            total_profiles += 1
                             if "favoriteRaceP1" not in profile:
-                                logger.error(f"Error with profile")
+                                logger.error(
+                                    f"Error with profile in region '{region_name}' - has no 'favoriteRaceP1' entry."
+                                )
+                                profiles_with_no_favorite_race_p1 += 1
                                 continue
                             wins = profile["wins"]
                             losses = profile["losses"]
@@ -104,14 +137,21 @@ async def get_sc2_legacy_ladder_api_data(
                         get_avg_games_entry(league_tier_wins, league_tier_losses, league_tier_profiles, race)
                         for race in RACES + ["TOTAL"]
                     ]
+                    new_table_avg_games.append(new_row_avg_games)
 
                     # Calculate average winrate per race
                     new_row_avg_winrate += [
                         get_avg_winrate_entry(league_tier_wins, league_tier_losses, race) for race in RACES
                     ]
-
-                    new_table_avg_games.append(new_row_avg_games)
                     new_table_avg_winrate.append(new_row_avg_winrate)
+
+                    # Calculate total games per race
+                    new_row_total_games += [
+                        get_total_games_entry(league_tier_wins, league_tier_losses, race) for race in RACES + ["TOTAL"]
+                    ]
+                    new_table_total_games.append(new_row_total_games)
+
+        # Add region data
 
         new_table_avg_games.append(STATISTICS_HEADER_WITH_TOTAL)
         new_table_avg_games.reverse()
@@ -121,8 +161,20 @@ async def get_sc2_legacy_ladder_api_data(
         new_table_avg_winrate.reverse()
         avg_winrate_table[f"{region_name}"] = new_table_avg_winrate
 
+        new_table_total_games.append(STATISTICS_HEADER_WITH_TOTAL)
+        new_table_total_games.reverse()
+        total_games_table[f"{region_name}"] = new_table_total_games
+
     # Add GM stats
     await add_gm_stats(gm_data, avg_games_table, avg_winrate_table)
+
+    # Debugging blizzard API
+    if total_profiles > 0:
+        _fraction = profiles_with_no_favorite_race_p1 / total_profiles
+        if profiles_with_no_favorite_race_p1 > 0:
+            logger.warning(
+                f"Found {profiles_with_no_favorite_race_p1} / {total_profiles} ({get_percentage(_fraction)}) profiles which are incompletely returned by the legacy API."
+            )
 
     logger.info(f"Outputting info to 'avg_games_table.json'")
     with open("avg_games_table.json", "w") as f:
@@ -131,9 +183,15 @@ async def get_sc2_legacy_ladder_api_data(
     logger.info(f"Outputting info to 'avg_winrate_table.json'")
     with open("avg_winrate_table.json", "w") as f:
         json.dump(avg_winrate_table, f, indent=4, sort_keys=True)
+
+    logger.info(f"Outputting info to 'total_games_table.json'")
+    with open("total_games_table.json", "w") as f:
+        json.dump(total_games_table, f, indent=4, sort_keys=True)
+
     return {
         "avg_games": avg_games_table,
         "avg_winrate": avg_winrate_table,
+        "total_games": total_games_table,
     }
 
 
