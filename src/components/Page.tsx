@@ -126,7 +126,7 @@ export default class Page extends Component<Props, State> {
                                         this.setState({ active: 103 })
                                     }}
                                     // Tooltip
-                                    data-tip={"wins / total games"}
+                                    data-tip={"total wins / total games"}
                                     data-for="globalTooltip"
                                 >
                                     Average winrate
