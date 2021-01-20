@@ -127,6 +127,9 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+# Tailwindcss will be rebuilt using npm run start and npm run build command
+src/index.css
+
 # Pycharm
 .idea/
 
@@ -143,3 +146,5 @@ data_table_raw.json
 formatted_table.json
 data_gm_api.json
 data_ladder_api_with_gm.json
+
+
