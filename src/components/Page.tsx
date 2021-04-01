@@ -7,6 +7,7 @@ import data_avg_winrate from "../data/data_avg_winrate_table.json"
 import Header from "./Header"
 import Statistics from "./Statistics"
 import Table from "./Table"
+import Footer from "./Footer"
 
 interface Props {}
 interface State {
@@ -161,6 +162,7 @@ export default class Page extends Component<Props, State> {
                     <ReactTooltip place="bottom" id="globalTooltip" />
                     {/*{this.state.tooltipText}</ReactTooltip>*/}
                 </div>
+                <Footer />
             </div>
         )
     }
