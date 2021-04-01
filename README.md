@@ -1,6 +1,6 @@
-# MMR Range
+# MMR Ranges
 
-Source code for [MMM Ranges](https://burnysc2.github.io/MMR-Ranges/)
+Source code for [MMR Ranges](https://burnysc2.github.io/MMR-Ranges/)
 
 ## Prettify:
 
