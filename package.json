@@ -12,13 +12,13 @@
     "@types/react": "^16.14.2",
     "@types/react-dom": "^16.9.10",
     "@types/react-tooltip": "^4.2.4",
+    "prettier": "^2.2.1",
     "react": "^16.14.0",
     "react-dom": "^16.14.0",
     "react-scripts": "3.4.3",
     "react-tooltip": "^4.2.13",
     "tailwindcss": "^1.9.6",
-    "typescript": "^3.9.7",
-    "prettier": "^2.2.1"
+    "typescript": "^3.9.7"
   },
   "scripts": {
     "start": "npm run tailwind:css:dev && BROWSER=none react-scripts start",
