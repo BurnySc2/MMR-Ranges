@@ -30,7 +30,10 @@ async def prepare_mmr_table_data(responses: List[dict]):
             league_id: str = str(response["key"]["league_id"])
             # tier 0 in api is tier 1 on ladder, tier 2 in api is tier 3 on ladder
             tiers = {
-                tier["id"]: {"min_rating": tier["min_rating"], "max_rating": tier["max_rating"],}
+                tier["id"]: {
+                    "min_rating": tier["min_rating"],
+                    "max_rating": tier["max_rating"],
+                }
                 for tier in response["tier"]
             }
 

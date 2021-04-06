@@ -10,7 +10,7 @@ import json
 
 async def get_access_token(client: aiohttp.ClientSession, client_id: str, client_secret: str) -> str:
     logger.info(f"Grabbing access token...")
-    response = await client.get(
+    response = await client.post(
         "https://us.battle.net/oauth/token",
         params={"grant_type": "client_credentials"},
         auth=aiohttp.BasicAuth(client_id, client_secret),
