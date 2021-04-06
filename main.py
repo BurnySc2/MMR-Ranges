@@ -1,18 +1,12 @@
 # Other
-import time
 import os
-import sys
-import re
-import time
 import json
 import sys
-import collections
 from pathlib import Path
 
 # Coroutines and multiprocessing
 import asyncio
 import aiohttp
-import arrow
 
 # Simple logging https://github.com/Delgan/loguru
 from loguru import logger
@@ -20,9 +14,6 @@ from loguru import logger
 from gather.get_legacy_ladders_data import get_sc2_legacy_ladder_api_data
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
-
-# Type annotation / hints
-from typing import Dict, Set, List, Iterable, Union, Optional, Any
 
 from gather.helper import get_access_token
 from gather.create_header import get_current_season_info, convert_header_data_to_json
@@ -118,6 +109,7 @@ ladder API:
 class MMRranges:
     def __init__(self, client):
         self.client: aiohttp.ClientSession = client
+        self.token: str = None
 
         directory = Path(__file__).parent
 

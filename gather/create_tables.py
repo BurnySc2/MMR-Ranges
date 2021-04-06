@@ -1,16 +1,11 @@
 from loguru import logger
-from dpath.util import get, new, merge
 
 from typing import Optional, List, Dict, Any, Generator
-import aiohttp
-import asyncio
-import re
 import json
-import arrow
 
-from .helper import fetch_multiple, get_region_from_href
+from .helper import get_region_from_href
 from .constants import *
-from dpath.util import get, new, merge
+from dpath.util import get, merge
 
 
 async def prepare_mmr_table_data(responses: List[dict]):

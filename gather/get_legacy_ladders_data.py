@@ -1,16 +1,11 @@
 from loguru import logger
-from dpath.util import get, new, merge
 
-from typing import Optional, List, Dict, Any, Generator
 import aiohttp
-import asyncio
-import re
 import json
-import arrow
 
-from .helper import fetch_multiple, get_region_from_href
+from .helper import fetch_multiple
 from .constants import *
-from dpath.util import get, new, merge
+from dpath.util import get, new
 
 
 def get_percentage(fraction: float, decimal_places: int = 2) -> str:
