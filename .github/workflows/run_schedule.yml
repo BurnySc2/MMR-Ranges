@@ -25,8 +25,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      # Use pip requirements.txt cache https://github.com/actions/cache/blob/master/examples.md#python---pip
-      # Apparently you can't use cache when using pipenv (but perhaps when specifying the pipenv environment folder?)
+      - name: Cache poetry
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pypoetry/virtualenvs
+          key: ${{ runner.os }}-${{ matrix.python-version }}-poetry-${{ hashFiles('poetry.lock') }}
 
       - name: Install poetry (python)
         run: |
@@ -35,6 +38,12 @@ jobs:
       - name: Install dependencies (python)
         run: |
           poetry install
+
+      - name: Cache npm
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-${{ matrix.node }}-node-${{ hashFiles('**/package-lock.json') }}
 
       - name: Install dependencies (npm)
         run: |
@@ -48,13 +57,13 @@ jobs:
         run: |
           npm run build
 
-      - name: Publish to Github Pages
+      - name: Deploy to GitHub Pages
         if: github.ref == 'refs/heads/master'
-        uses: JamesIves/github-pages-deploy-action@releases/v3
+        uses: crazy-max/ghaction-github-pages@v2
         with:
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-          BASE_BRANCH: master # The branch the action should deploy from.
-          BRANCH: gh-pages # The branch the action should deploy to.
-          FOLDER: build # The folder the action should deploy.
-
+          target_branch: gh-pages
+          build_dir: build
+          committer: "MMRbot <mmr@foo.bar>"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_PAGES_TOKEN }}
 
