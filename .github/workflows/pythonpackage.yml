@@ -60,8 +60,10 @@ jobs:
         if: github.ref == 'refs/heads/master'
         uses: crazy-max/ghaction-github-pages@v2
         with:
+          committer: Deployer Bot <deploy@foo.bar>
+          author: Deployer Bot <deploy@foo.bar>
+          allow_empty_commit: false
           target_branch: gh-pages
           build_dir: build
-          committer: "MMRbot <mmr@foo.bar>"
         env:
-          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
