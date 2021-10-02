@@ -65,5 +65,5 @@ jobs:
           build_dir: build
           committer: "MMRbot <mmr@foo.bar>"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_PAGES_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
 
