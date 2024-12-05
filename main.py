@@ -1,26 +1,18 @@
 # Other
-import os
-import json
-import sys
-from pathlib import Path
-
 # Coroutines and multiprocessing
 import asyncio
-import aiohttp
+import json
+import os
+from pathlib import Path
 
-# Simple logging https://github.com/Delgan/loguru
-from loguru import logger
+import httpx
 
-from gather.get_legacy_ladders_data import get_sc2_legacy_ladder_api_data
-
-logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
-
-from gather.helper import get_access_token
-from gather.create_header import get_current_season_info, convert_header_data_to_json
+from gather.create_header import convert_header_data_to_json, get_current_season_info
+from gather.create_tables import create_mmr_tables, prepare_mmr_table_data
 from gather.get_api_data import get_sc2_league_api_data
-
-from gather.create_tables import prepare_mmr_table_data, create_mmr_tables
-from gather.get_gm_data import get_sc2_gm_api_data, get_gm_borders, mix_gm_data
+from gather.get_gm_data import get_gm_borders, get_sc2_gm_api_data, mix_gm_data
+from gather.get_legacy_ladders_data import get_sc2_legacy_ladder_api_data
+from gather.helper import get_access_token
 
 """
 ladder API:
@@ -108,26 +100,15 @@ ladder API:
 
 class MMRranges:
     def __init__(self, client):
-        self.client: aiohttp.ClientSession = client
+        self.client: httpx.AsyncClient = client
         self.token: str = None
-
-        directory = Path(__file__).parent
-
-        auth_json_path = directory / "auth.json"
-        if auth_json_path.exists():
-            with open(auth_json_path) as f:
-                data = json.load(f)
-                self.MY_CLIENT_ID = data["CLIENT_ID"]
-                self.MY_CLIENT_SECRET = data["CLIENT_SECRET"]
-        else:
-            _, self.MY_CLIENT_ID, self.MY_CLIENT_SECRET = sys.argv
 
         # API rate limit
         self.rate_limit = 50  # x calls per second, can be up to 100 per second
         self.delay_per_fetch = 1 / self.rate_limit
 
     async def async_init(self):
-        self.token: str = await get_access_token(self.client, self.MY_CLIENT_ID, self.MY_CLIENT_SECRET)
+        self.token: str = await get_access_token(self.client)
 
     async def run(self):
         # Grab raw API data
@@ -135,7 +116,9 @@ class MMRranges:
         ladders_api_info = await get_sc2_league_api_data(
             self.client, self.token, season_info.season_number, self.delay_per_fetch
         )
-        gm_data = await get_sc2_gm_api_data(self.client, self.token, self.delay_per_fetch)
+        gm_data = await get_sc2_gm_api_data(
+            self.client, self.token, self.delay_per_fetch
+        )
         gm_borders = await get_gm_borders(gm_data)
 
         # Format the received data into a readable shape
@@ -167,7 +150,7 @@ class MMRranges:
 
 
 async def main():
-    async with aiohttp.ClientSession() as client:
+    async with httpx.AsyncClient() as client:
         mmrranges = MMRranges(client)
         await mmrranges.async_init()
         await mmrranges.run()

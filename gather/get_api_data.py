@@ -1,14 +1,14 @@
-from loguru import logger
-
-import aiohttp
 import json
 
+import httpx
+from loguru import logger
+
+from .constants import MODES
 from .helper import fetch_multiple
-from .constants import *
 
 
 async def get_sc2_league_api_data(
-    client: aiohttp.ClientSession, access_token: str, season_number: int, fetch_delay: float
+    client: httpx.AsyncClient, access_token: str, season_number: int, fetch_delay: float
 ):
     url = "https://{}.api.blizzard.com/data/sc2/league/{}/{}/{}/{}?locale=en_US&"
 
@@ -19,13 +19,15 @@ async def get_sc2_league_api_data(
             for queue_id in MODES:
                 for team_type in ["0"]:
                     for league_id in map(str, range(6)):
-                        urls.append(url.format(region, season, queue_id, team_type, league_id))
+                        urls.append(
+                            url.format(region, season, queue_id, team_type, league_id)
+                        )
 
     logger.info(f"Fetching {len(url)} urls")
     responses = await fetch_multiple(client, access_token, urls, fetch_delay)
     logger.info(f"Fetched {len(url)} urls")
 
-    logger.info(f"Outputting info to 'data_ladder_api.json'")
+    logger.info("Outputting info to 'data_ladder_api.json'")
     with open("data_ladder_api.json", "w") as f:
         json.dump(responses, f, indent=4, sort_keys=True)
     return responses

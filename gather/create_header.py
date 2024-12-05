@@ -1,11 +1,11 @@
-from loguru import logger
-
-import aiohttp
-import arrow
 from dataclasses import dataclass
 
+import arrow
+import httpx
+from loguru import logger
+
+from .constants import REGIONS
 from .helper import fetch_multiple
-from .constants import *
 
 """
 Functions to retrieve all necessary info that are displayed in the header of the website
@@ -21,14 +21,16 @@ class SeasonInfo:
     season_end_readable: str
 
 
-async def get_current_season_info(client: aiohttp.ClientSession, access_token: str):
+async def get_current_season_info(client: httpx.AsyncClient, access_token: str):
     get_season_number_url = "https://{}.api.blizzard.com/sc2/ladder/season/{}"
     urls = []
     for index, region in enumerate(REGIONS, start=1):
         urls.append(get_season_number_url.format(region, index))
     responses = await fetch_multiple(client, access_token, urls, fetch_delay=0)
 
-    season_numbers = {region: response["seasonId"] for region, response in zip(REGIONS, responses)}
+    season_numbers = {
+        region: response["seasonId"] for region, response in zip(REGIONS, responses)
+    }
     logger.info(f"Season numbers are: {season_numbers}")
 
     season_start = max(int(response["startDate"]) for response in responses)

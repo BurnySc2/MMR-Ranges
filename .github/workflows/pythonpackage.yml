@@ -8,35 +8,27 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: [3.7]
+        python-version: [3.13]
         node: [ '10' ]
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node }}
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Cache poetry
-        uses: actions/cache@v2
-        with:
-          path: ~/.cache/pypoetry/virtualenvs
-          key: ${{ runner.os }}-${{ matrix.python-version }}-poetry-${{ hashFiles('poetry.lock') }}
+      - name: Install uv
+        run: pip install uv
 
-      - name: Install poetry (python)
-        run: |
-          python -m pip install poetry
-
-      - name: Install dependencies (python)
-        run: |
-          poetry install
+      - name: Install packages
+        run: uv sync --frozen --no-cache --no-install-project
 
       - name: Cache npm
         uses: actions/cache@v2
@@ -49,8 +41,11 @@ jobs:
           npm install
 
       - name: Create data tables (python)
+        env:
+          CLIENT_ID: ${{ secrets.CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
         run: |
-          poetry run python main.py ${{ secrets.CLIENT_ID }} ${{ secrets.CLIENT_SECRET }}
+          uv run python main.py
 
       - name: Create website (npm)
         run: |

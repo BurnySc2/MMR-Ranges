@@ -1,66 +1,73 @@
-from loguru import logger
-from dpath.util import new, merge, get
-
-from typing import Optional, List, Dict, Any, Generator
-import aiohttp
 import asyncio
-import re
 import json
+import os
+import re
+from typing import List, Optional
+
+import httpx
+from dpath.util import get, merge, new
+from loguru import logger
 
 
-async def get_access_token(client: aiohttp.ClientSession, client_id: str, client_secret: str) -> str:
-    logger.info(f"Grabbing access token...")
+async def get_access_token(client: httpx.AsyncClient) -> str:
+    client_id: str = os.getenv("CLIENT_ID")  # pyre-fixme[9]
+    client_secret: str = os.getenv("CLIENT_SECRET")  # pyre-fixme[9]
+    logger.info("Grabbing access token...")
     response = await client.post(
         "https://us.battle.net/oauth/token",
         params={"grant_type": "client_credentials"},
-        auth=aiohttp.BasicAuth(client_id, client_secret),
+        auth=httpx.BasicAuth(client_id, client_secret),
     )
-    assert response.status == 200, response.status
-    token_json = await response.json()
-    logger.info(f"Got access token")
+    assert response.is_success, response.status_code
+    token_json = response.json()
+    logger.info("Got access token")
     return token_json["access_token"]
 
 
-async def fetch(client: aiohttp.ClientSession, access_token: str, url: str, fetch_delay: float = 0) -> dict:
+async def fetch(
+    client: httpx.AsyncClient, access_token: str, url: str, fetch_delay: float = 0
+) -> dict:
     if fetch_delay > 0:
         await asyncio.sleep(fetch_delay)
     logger.info(f"Fetching url {url}")
-    access_token = f"access_token={access_token}"
-    if "?" in url:
-        end = "&"
-    else:
-        end = "?"
-    ending = "" if url.endswith(end) else end
-    correct_url = f"{url}{ending}{access_token}"
-    async with client.get(correct_url) as response:
-        logger.info(f"Done fetching url {url}")
-        if response.status == 200:
-            try:
-                json_response = await response.json()
-            except aiohttp.ContentTypeError:
-                return {}
-            return json_response
-        logger.error(
-            f"Unable to decode url '{url}', receiving response status '{response.status}' and error '{response.reason}'"
-        )
-        return {}
+    response = await client.get(
+        url,
+        headers={
+            "Authorization": f"Bearer {access_token}",
+        },
+    )
+    logger.info(f"Done fetching url {url}")
+    if response.status_code == 200:
+        # TODO What error may occur?
+        json_response = response.json()
+        return json_response
+    logger.error(
+        f"Unable to decode url '{url}', receiving response status '{response.status_code}' and error '{response.text}'"
+    )
+    return {}
 
 
 async def fetch_multiple(
-    client: aiohttp.ClientSession, access_token: str, urls: List[str], fetch_delay: float = 0
+    client: httpx.AsyncClient,
+    access_token: str,
+    urls: List[str],
+    fetch_delay: float = 0,
 ) -> List[dict]:
     """
     Usage:
     async for i in fetch_multiple():
         print(i)
     """
-    tasks = [asyncio.create_task(fetch(client, access_token, url, fetch_delay * i)) for i, url in enumerate(urls)]
+    tasks = [
+        asyncio.create_task(fetch(client, access_token, url, fetch_delay * i))
+        for i, url in enumerate(urls)
+    ]
     responses = await asyncio.gather(*tasks)
     return responses
 
 
 def get_region_from_href(url) -> Optional[str]:
-    """ Returns one of: us, eu, kr"""
+    """Returns one of: us, eu, kr"""
     result = re.findall(r".+((?:us)|(?:eu)|(?:kr))\.api.+", url)
     if result:
         return result[0]

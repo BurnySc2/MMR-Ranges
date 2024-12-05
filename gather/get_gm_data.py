@@ -1,25 +1,26 @@
-from loguru import logger
-
-import aiohttp
 import json
-from dpath.util import new, merge
-
 from copy import deepcopy
 
+import httpx
+from dpath.util import merge, new
+from loguru import logger
+
+from .constants import REGIONS
 from .helper import fetch_multiple
-from .constants import *
 
 
-async def get_sc2_gm_api_data(client: aiohttp.ClientSession, access_token: str, fetch_delay: float):
+async def get_sc2_gm_api_data(
+    client: httpx.AsyncClient, access_token: str, fetch_delay: float
+):
     url = "https://{}.api.blizzard.com/sc2/ladder/grandmaster/{}"
 
     urls = [url.format(region, index) for index, region in enumerate(REGIONS, start=1)]
 
-    logger.info(f"Fetching GM data")
+    logger.info("Fetching GM data")
     responses = await fetch_multiple(client, access_token, urls, fetch_delay)
-    logger.info(f"Fetched GM data")
+    logger.info("Fetched GM data")
 
-    logger.info(f"Outputting info to 'data_gm_api.json'")
+    logger.info("Outputting info to 'data_gm_api.json'")
     with open("data_gm_api.json", "w") as f:
         json.dump(responses, f, indent=4, sort_keys=True)
     return responses

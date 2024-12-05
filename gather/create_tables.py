@@ -1,11 +1,11 @@
+import json
+from typing import List
+
+from dpath.util import get, merge
 from loguru import logger
 
-from typing import Optional, List, Dict, Any, Generator
-import json
-
+from .constants import LEAGUES, MODES, REGIONS, ROW_DESCRIPTIONS, TABLE_HEADER
 from .helper import get_region_from_href
-from .constants import *
-from dpath.util import get, merge
 
 
 async def prepare_mmr_table_data(responses: List[dict]):
@@ -37,16 +37,23 @@ async def prepare_mmr_table_data(responses: List[dict]):
                 for tier in response["tier"]:
                     # Entry "division" may be missing instead of having empty array...
                     tiers[tier["id"]]["ladder_ids"] = (
-                        [division["ladder_id"] for division in tier["division"]] if "division" in tier else []
+                        [division["ladder_id"] for division in tier["division"]]
+                        if "division" in tier
+                        else []
                     )
 
             response_data = {
-                queue_id: {league_id: {str(tierid): {region: tierData} for tierid, tierData in tiers.items()}}
+                queue_id: {
+                    league_id: {
+                        str(tierid): {region: tierData}
+                        for tierid, tierData in tiers.items()
+                    }
+                }
             }
             merge(data, response_data)
     logger.info("Data prepared")
 
-    logger.info(f"Outputting info to 'data_table_raw.json'")
+    logger.info("Outputting info to 'data_table_raw.json'")
     with open("data_table_raw.json", "w") as f:
         json.dump(data, f, indent=4, sort_keys=True)
 
@@ -60,7 +67,6 @@ async def create_mmr_tables(prepared_data: dict):
         row_number = 0
         for league_id, league in enumerate(LEAGUES):
             for tier_id in reversed(range(3)):
-
                 # Skip if it doesnt exist, e.g. for GM when GM is locked
                 if not get(prepared_data, f"{mode}/{league_id}/{tier_id}", default={}):
                     continue
@@ -69,10 +75,18 @@ async def create_mmr_tables(prepared_data: dict):
                 row_number += 1
                 for region_id, region_name in enumerate(REGIONS, start=1):
                     min_rating = str(
-                        get(prepared_data, f"{mode}/{league_id}/{tier_id}/{region_name}/min_rating", default="")
+                        get(
+                            prepared_data,
+                            f"{mode}/{league_id}/{tier_id}/{region_name}/min_rating",
+                            default="",
+                        )
                     )
                     max_rating = str(
-                        get(prepared_data, f"{mode}/{league_id}/{tier_id}/{region_name}/max_rating", default="")
+                        get(
+                            prepared_data,
+                            f"{mode}/{league_id}/{tier_id}/{region_name}/max_rating",
+                            default="",
+                        )
                     )
 
                     if not min_rating or not max_rating:
@@ -85,7 +99,7 @@ async def create_mmr_tables(prepared_data: dict):
         new_table.reverse()
         formatted_table[mode] = new_table
 
-    logger.info(f"Outputting info to 'formatted_table.json'")
+    logger.info("Outputting info to 'formatted_table.json'")
     with open("formatted_table.json", "w") as f:
         json.dump(formatted_table, f, indent=4, sort_keys=True)
     return formatted_table
