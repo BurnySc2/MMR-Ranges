@@ -6,9 +6,10 @@ LEAGUES = ["Bronze", "Silver", "Gold", "Platinum", "Diamond", "Master", "GrandMa
 REGIONS = ["us", "eu", "kr"]
 TIERS = list(reversed(range(1, 4)))
 ROW_DESCRIPTIONS = [
-    (f"{league} {tier}" if league != "GrandMaster" else league)
+    f"{league} {tier}"
     for league in LEAGUES
     for tier in TIERS
+    if league != "GrandMaster"
 ] + ["GrandMaster"]
 RACES = ["P", "T", "Z", "R"]
 

@@ -2,7 +2,7 @@ import json
 from copy import deepcopy
 
 import httpx
-from dpath.util import merge, new
+from dpath.util import new
 from loguru import logger
 
 from .constants import REGIONS
@@ -27,7 +27,8 @@ async def get_sc2_gm_api_data(
 
 
 async def mix_gm_data(prepared_data, gm_borders):
-    merge(prepared_data, gm_borders)
+    prepared_data["201"]["6"] = {}
+    prepared_data["201"]["6"]["2"] = gm_borders["201"][6][0]
     with open("data_ladder_api_with_gm.json", "w") as f:
         json.dump(prepared_data, f, indent=4, sort_keys=True)
     return prepared_data

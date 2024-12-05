@@ -4,11 +4,11 @@ from typing import List
 from dpath.util import get, merge
 from loguru import logger
 
-from .constants import LEAGUES, MODES, REGIONS, ROW_DESCRIPTIONS, TABLE_HEADER
+from .constants import LEAGUES, MODES, REGIONS, TABLE_HEADER
 from .helper import get_region_from_href
 
 
-async def prepare_mmr_table_data(responses: List[dict]):
+async def prepare_mmr_table_data(responses: List[dict]) -> dict:
     data = {}
     for response in responses:
         # There was an error in the response, empty dict is returned
@@ -56,24 +56,29 @@ async def prepare_mmr_table_data(responses: List[dict]):
     logger.info("Outputting info to 'data_table_raw.json'")
     with open("data_table_raw.json", "w") as f:
         json.dump(data, f, indent=4, sort_keys=True)
-
     return data
 
 
-async def create_mmr_tables(prepared_data: dict):
+async def create_mmr_tables(prepared_data: dict) -> dict:
     formatted_table = {}
     for mode in MODES:
         new_table = []
         row_number = 0
         for league_id, league in enumerate(LEAGUES):
-            for tier_id in reversed(range(3)):
-                # Skip if it doesnt exist, e.g. for GM when GM is locked
-                if not get(prepared_data, f"{mode}/{league_id}/{tier_id}", default={}):
+            for tier_id in range(2, -1, -1):
+                # TODO Skip if it doesnt exist, e.g. for GM when GM is locked
+                # if not get(prepared_data, f"{mode}/{league_id}/{tier_id}", default={}):
+                #     continue
+
+                if league == "GrandMaster" and tier_id != 2:
                     continue
 
-                new_row = [ROW_DESCRIPTIONS[row_number]]
+                new_row = [f"{league} {tier_id + 1}"]
+                if league == "GrandMaster":
+                    new_row = [f"{league}"]
+
                 row_number += 1
-                for region_id, region_name in enumerate(REGIONS, start=1):
+                for _region_id, region_name in enumerate(REGIONS, start=1):
                     min_rating = str(
                         get(
                             prepared_data,

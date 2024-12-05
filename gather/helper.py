@@ -30,21 +30,16 @@ async def fetch(
     if fetch_delay > 0:
         await asyncio.sleep(fetch_delay)
     logger.info(f"Fetching url {url}")
-    response = await client.get(
-        url,
-        headers={
-            "Authorization": f"Bearer {access_token}",
-        },
-    )
-    logger.info(f"Done fetching url {url}")
-    if response.status_code == 200:
-        # TODO What error may occur?
-        json_response = response.json()
-        return json_response
-    logger.error(
-        f"Unable to decode url '{url}', receiving response status '{response.status_code}' and error '{response.text}'"
-    )
-    return {}
+    try:
+        response = await client.get(
+            url,
+            headers={
+                "Authorization": f"Bearer {access_token}",
+            },
+        )
+        return response.json()
+    except (httpx.ReadTimeout, httpx.ReadError, json.JSONDecodeError):
+        return {}
 
 
 async def fetch_multiple(
