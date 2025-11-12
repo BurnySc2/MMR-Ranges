@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import httpx
 from loguru import logger
@@ -26,6 +27,5 @@ async def get_sc2_league_api_data(
     logger.info(f"Fetched {len(url)} urls")
 
     logger.info("Outputting info to 'data_ladder_api.json'")
-    with open("data_ladder_api.json", "w") as f:
-        json.dump(responses, f, indent=4, sort_keys=True)
+    Path("data_ladder_api.json").write_text(json.dumps(responses, indent=4, sort_keys=True))
     return responses

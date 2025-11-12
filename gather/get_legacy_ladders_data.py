@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import httpx
 from dpath.util import get, new
@@ -208,16 +209,13 @@ async def get_sc2_legacy_ladder_api_data(
             )
 
     logger.info("Outputting info to 'avg_games_table.json'")
-    with open("avg_games_table.json", "w") as f:
-        json.dump(avg_games_table, f, indent=4, sort_keys=True)
+    Path("avg_games_table.json").write_text(json.dumps(avg_games_table, indent=4, sort_keys=True))
 
     logger.info("Outputting info to 'avg_winrate_table.json'")
-    with open("avg_winrate_table.json", "w") as f:
-        json.dump(avg_winrate_table, f, indent=4, sort_keys=True)
+    Path("avg_winrate_table.json").write_text(json.dumps(avg_winrate_table, indent=4, sort_keys=True))
 
     logger.info("Outputting info to 'total_games_table.json'")
-    with open("total_games_table.json", "w") as f:
-        json.dump(total_games_table, f, indent=4, sort_keys=True)
+    Path("total_games_table.json").write_text(json.dumps(total_games_table, indent=4, sort_keys=True))
 
     return {
         "avg_games": avg_games_table,

@@ -1,5 +1,6 @@
 import json
 from copy import deepcopy
+from pathlib import Path
 
 import httpx
 from dpath.util import new
@@ -19,8 +20,7 @@ async def get_sc2_gm_api_data(client: httpx.AsyncClient, access_token: str, fetc
     logger.info("Fetched GM data")
 
     logger.info("Outputting info to 'data_gm_api.json'")
-    with open("data_gm_api.json", "w") as f:
-        json.dump(responses, f, indent=4, sort_keys=True)
+    Path("data_gm_api.json").write_text(json.dumps(responses, indent=4, sort_keys=True))
     return responses
 
 
@@ -30,8 +30,7 @@ async def mix_gm_data(prepared_data: dict, gm_borders: dict) -> dict:
     if len(gm_borders) == 0:
         return prepared_data
     prepared_data["201"]["6"]["2"] = gm_borders["201"][6][0]
-    with open("data_ladder_api_with_gm.json", "w") as f:
-        json.dump(prepared_data, f, indent=4, sort_keys=True)
+    Path("data_ladder_api_with_gm.json").write_text(json.dumps(prepared_data, indent=4, sort_keys=True))
     return prepared_data
 
 

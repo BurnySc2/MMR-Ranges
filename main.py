@@ -2,12 +2,12 @@
 # Coroutines and multiprocessing
 import asyncio
 import json
-import os
 from pathlib import Path
+from typing import Any
 
 import httpx
 
-from gather.create_header import convert_header_data_to_json, get_current_season_info
+from gather.create_header import SeasonInfo, convert_header_data_to_json, get_current_season_info
 from gather.create_tables import create_mmr_tables, prepare_mmr_table_data
 from gather.get_api_data import get_sc2_league_api_data
 from gather.get_gm_data import get_gm_borders, get_sc2_gm_api_data, mix_gm_data
@@ -16,7 +16,7 @@ from gather.helper import get_access_token
 
 """
 ladder API:
-/sc2/ladder/season/:regionId: 
+/sc2/ladder/season/:regionId:
 {
   "seasonId": 45,
   "number": 3,
@@ -25,7 +25,7 @@ ladder API:
   "endDate": "1611640800"
 }
 
-/sc2/ladder/grandmaster/:regionId: 
+/sc2/ladder/grandmaster/:regionId:
 
 /data/sc2/league/{seasonId}/{queueId}/{teamType}/{leagueId}
 {
@@ -132,19 +132,22 @@ class MMRranges:
         mmr_tables = await create_mmr_tables(prepared_data)
 
         # Write data to files
+        files_dict: dict[str, dict[str, Any] | SeasonInfo] = {
+            "data_header.json": season_info,
+            "data_mmr_table.json": mmr_tables,
+            "data_avg_games_table.json": race_league_statistics["avg_games"],
+            "data_avg_winrate_table.json": race_league_statistics["avg_winrate"],
+            "data_total_games_table.json": race_league_statistics["total_games"],
+        }
+
         data_folder = Path(__file__).parent / "src" / "data"
 
-        os.makedirs(data_folder, exist_ok=True)
-        with open(data_folder / "data_header.json", "w") as f:
-            json.dump(convert_header_data_to_json(season_info), f, indent=4)
-        with open(data_folder / "data_mmr_table.json", "w") as f:
-            json.dump(mmr_tables, f, indent=4)
-        with open(data_folder / "data_avg_games_table.json", "w") as f:
-            json.dump(race_league_statistics["avg_games"], f, indent=4)
-        with open(data_folder / "data_avg_winrate_table.json", "w") as f:
-            json.dump(race_league_statistics["avg_winrate"], f, indent=4)
-        with open(data_folder / "data_total_games_table.json", "w") as f:
-            json.dump(race_league_statistics["total_games"], f, indent=4)
+        data_folder.mkdir(parents=True, exist_ok=True)
+
+        for file_name, data in files_dict.items():
+            if not isinstance(data, dict):
+                data = convert_header_data_to_json(data)
+            (data_folder / file_name).write_text(json.dumps(data, indent=4))
 
 
 async def main():

@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from typing import List
 
 from dpath.util import get, merge
@@ -17,7 +18,7 @@ async def prepare_mmr_table_data(responses: List[dict]) -> dict:
 
         if response.get("code", 200) == 200:
             # total season id, in general each year has 4-6 seasons
-            season_id: str = str(response["key"]["season_id"])
+            _season_id: str = str(response["key"]["season_id"])
             # the game type, e.g. 1v1 2v2 for [201, 202, 203, 204, 206] 206 being archon
             queue_id: str = str(response["key"]["queue_id"])
             region: str = get_region_from_href(response["_links"]["self"]["href"])
@@ -47,8 +48,7 @@ async def prepare_mmr_table_data(responses: List[dict]) -> dict:
     logger.info("Data prepared")
 
     logger.info("Outputting info to 'data_table_raw.json'")
-    with open("data_table_raw.json", "w") as f:
-        json.dump(data, f, indent=4, sort_keys=True)
+    Path("data_table_raw.json").write_text(json.dumps(data, indent=4, sort_keys=True))
     return data
 
 
@@ -98,6 +98,5 @@ async def create_mmr_tables(prepared_data: dict) -> dict:
         formatted_table[mode] = new_table
 
     logger.info("Outputting info to 'formatted_table.json'")
-    with open("formatted_table.json", "w") as f:
-        json.dump(formatted_table, f, indent=4, sort_keys=True)
+    Path("formatted_table.json").write_text(json.dumps(formatted_table, indent=4, sort_keys=True))
     return formatted_table
