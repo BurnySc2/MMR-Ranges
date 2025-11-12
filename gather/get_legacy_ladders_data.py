@@ -102,9 +102,7 @@ async def get_sc2_legacy_ladder_api_data(
             for league_id, league in enumerate(LEAGUES[:6]):
                 for tier_id in reversed(range(3)):
                     # Skip if it doesnt exist, e.g. for GM when GM is locked
-                    if not get(
-                        prepared_data, f"{mode}/{league_id}/{tier_id}", default={}
-                    ):
+                    if not get(prepared_data, f"{mode}/{league_id}/{tier_id}", default={}):
                         continue
 
                     new_row_avg_games = [ROW_DESCRIPTIONS[row_number]]
@@ -121,9 +119,7 @@ async def get_sc2_legacy_ladder_api_data(
                             default=[],
                         )
                     ]
-                    responses = await fetch_multiple(
-                        client, access_token, urls, fetch_delay
-                    )
+                    responses = await fetch_multiple(client, access_token, urls, fetch_delay)
 
                     # Collect games per race, keys are: P, T, Z, R
                     league_tier_wins = {}
@@ -132,9 +128,7 @@ async def get_sc2_legacy_ladder_api_data(
 
                     for response in responses:
                         if "ladderMembers" not in response:
-                            logger.error(
-                                "Error with response, no key found with 'ladderMembers'"
-                            )
+                            logger.error("Error with response, no key found with 'ladderMembers'")
                             continue
                         for profile in response["ladderMembers"]:
                             # Ignore profile if buggy (race not shown?)
@@ -151,15 +145,9 @@ async def get_sc2_legacy_ladder_api_data(
                             race = profile["favoriteRaceP1"][0]
 
                             # Load old data from dict
-                            total_race_wins = get(
-                                league_tier_wins, f"{race}", default=0
-                            )
-                            total_race_losses = get(
-                                league_tier_losses, f"{race}", default=0
-                            )
-                            total_race_profiles = get(
-                                league_tier_profiles, f"{race}", default=0
-                            )
+                            total_race_wins = get(league_tier_wins, f"{race}", default=0)
+                            total_race_losses = get(league_tier_losses, f"{race}", default=0)
+                            total_race_profiles = get(league_tier_profiles, f"{race}", default=0)
 
                             # Store new sum of data
                             new(league_tier_wins, f"{race}", total_race_wins + wins)
@@ -168,9 +156,7 @@ async def get_sc2_legacy_ladder_api_data(
                                 f"{race}",
                                 total_race_losses + losses,
                             )
-                            new(
-                                league_tier_profiles, f"{race}", total_race_profiles + 1
-                            )
+                            new(league_tier_profiles, f"{race}", total_race_profiles + 1)
 
                     # Calculate average games per profile
                     new_row_avg_games += [
@@ -186,19 +172,13 @@ async def get_sc2_legacy_ladder_api_data(
 
                     # Calculate average winrate per race
                     new_row_avg_winrate += [
-                        get_avg_winrate_entry(
-                            league_tier_wins, league_tier_losses, race
-                        )
-                        for race in RACES
+                        get_avg_winrate_entry(league_tier_wins, league_tier_losses, race) for race in RACES
                     ]
                     new_table_avg_winrate.append(new_row_avg_winrate)
 
                     # Calculate total games per race
                     new_row_total_games += [
-                        get_total_games_entry(
-                            league_tier_wins, league_tier_losses, race
-                        )
-                        for race in RACES + ["TOTAL"]
+                        get_total_games_entry(league_tier_wins, league_tier_losses, race) for race in RACES + ["TOTAL"]
                     ]
                     new_table_total_games.append(new_row_total_games)
 
@@ -270,8 +250,7 @@ async def add_gm_stats(gm_data, avg_games_table, total_games_table, avg_winrate_
                     player
                     for player in region_players
                     if "favoriteRace" in player["teamMembers"][0]
-                    and player["teamMembers"][0]["favoriteRace"][0].lower()
-                    == race.lower()
+                    and player["teamMembers"][0]["favoriteRace"][0].lower() == race.lower()
                 ]
             )
             if players_with_that_race == 0:
@@ -296,22 +275,16 @@ async def add_gm_stats(gm_data, avg_games_table, total_games_table, avg_winrate_
             total_wins += wins
             total_losses += losses
             total_players += players_with_that_race
-            new_row_avg_games.append(
-                f"{round((wins + losses) / players_with_that_race, AVG_GAMES_ROUNDING)}"
-            )
+            new_row_avg_games.append(f"{round((wins + losses) / players_with_that_race, AVG_GAMES_ROUNDING)}")
             new_row_total_games.append(f"{wins + losses}")
-            new_row_avg_winrate.append(
-                f"{round(100 * wins / (wins + losses), AVG_WINRATE_ROUNDING)}"
-            )
+            new_row_avg_winrate.append(f"{round(100 * wins / (wins + losses), AVG_WINRATE_ROUNDING)}")
 
         # Do not add any row if there are 0 players or no stats
         if total_players == 0:
             continue
 
         # Add total average to row
-        new_row_avg_games.append(
-            f"{round((total_wins + total_losses) / total_players, AVG_GAMES_ROUNDING)}"
-        )
+        new_row_avg_games.append(f"{round((total_wins + total_losses) / total_players, AVG_GAMES_ROUNDING)}")
 
         # Add total games to row
         new_row_total_games.append(f"{total_wins + total_losses}")

@@ -24,9 +24,7 @@ async def get_access_token(client: httpx.AsyncClient) -> str:
     return token_json["access_token"]
 
 
-async def fetch(
-    client: httpx.AsyncClient, access_token: str, url: str, fetch_delay: float = 0
-) -> dict:
+async def fetch(client: httpx.AsyncClient, access_token: str, url: str, fetch_delay: float = 0) -> dict:
     if fetch_delay > 0:
         await asyncio.sleep(fetch_delay)
     logger.info(f"Fetching url {url}")
@@ -53,10 +51,7 @@ async def fetch_multiple(
     async for i in fetch_multiple():
         print(i)
     """
-    tasks = [
-        asyncio.create_task(fetch(client, access_token, url, fetch_delay * i))
-        for i, url in enumerate(urls)
-    ]
+    tasks = [asyncio.create_task(fetch(client, access_token, url, fetch_delay * i)) for i, url in enumerate(urls)]
     responses = await asyncio.gather(*tasks)
     return responses
 

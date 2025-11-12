@@ -28,9 +28,7 @@ async def get_current_season_info(client: httpx.AsyncClient, access_token: str) 
         urls.append(get_season_number_url.format(region, index))
     responses = await fetch_multiple(client, access_token, urls, fetch_delay=0)
 
-    season_numbers = {
-        region: response["seasonId"] for region, response in zip(REGIONS, responses)
-    }
+    season_numbers = {region: response["seasonId"] for region, response in zip(REGIONS, responses)}
     logger.info(f"Season numbers are: {season_numbers}")
 
     season_start = max(int(response["startDate"]) for response in responses)

@@ -37,18 +37,11 @@ async def prepare_mmr_table_data(responses: List[dict]) -> dict:
                 for tier in response["tier"]:
                     # Entry "division" may be missing instead of having empty array...
                     tiers[tier["id"]]["ladder_ids"] = (
-                        [division["ladder_id"] for division in tier["division"]]
-                        if "division" in tier
-                        else []
+                        [division["ladder_id"] for division in tier["division"]] if "division" in tier else []
                     )
 
             response_data = {
-                queue_id: {
-                    league_id: {
-                        str(tierid): {region: tierData}
-                        for tierid, tierData in tiers.items()
-                    }
-                }
+                queue_id: {league_id: {str(tierid): {region: tierData} for tierid, tierData in tiers.items()}}
             }
             merge(data, response_data)
     logger.info("Data prepared")
