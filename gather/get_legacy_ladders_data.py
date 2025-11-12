@@ -73,7 +73,7 @@ async def get_sc2_legacy_ladder_api_data(
     fetch_delay: float,
     prepared_data: dict,
     gm_data: dict,
-):
+) -> dict:
     url = "https://{}.api.blizzard.com/sc2/legacy/ladder/{}/{}"
     # url = f"https://{region}.api.blizzard.com/sc2/legacy/ladder/{region_id}/{ladder_id}"
 
@@ -226,7 +226,7 @@ async def get_sc2_legacy_ladder_api_data(
     }
 
 
-async def add_gm_stats(gm_data, avg_games_table, total_games_table, avg_winrate_table):
+async def add_gm_stats(gm_data, avg_games_table, total_games_table, avg_winrate_table) -> None:
     # Add GM stats
     for region_id, region_name in enumerate(REGIONS, start=1):
         new_row_avg_games = [ROW_DESCRIPTIONS[-1]]

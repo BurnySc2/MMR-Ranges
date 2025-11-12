@@ -7,7 +7,9 @@ from .constants import MODES
 from .helper import fetch_multiple
 
 
-async def get_sc2_league_api_data(client: httpx.AsyncClient, access_token: str, season_number: int, fetch_delay: float):
+async def get_sc2_league_api_data(
+    client: httpx.AsyncClient, access_token: str, season_number: int, fetch_delay: float
+) -> list[dict]:
     url = "https://{}.api.blizzard.com/data/sc2/league/{}/{}/{}/{}?locale=en_US"
 
     urls = []

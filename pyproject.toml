@@ -7,7 +7,6 @@ dependencies = [
     "dpath>=2.2.0",
     "httpx>=0.28.0",
     "loguru>=0.7.2",
-    "pydantic>=2.10.6",
 ]
 
 [dependency-groups]

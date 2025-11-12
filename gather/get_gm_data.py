@@ -24,7 +24,7 @@ async def get_sc2_gm_api_data(client: httpx.AsyncClient, access_token: str, fetc
     return responses
 
 
-async def mix_gm_data(prepared_data, gm_borders):
+async def mix_gm_data(prepared_data: dict, gm_borders: dict) -> dict:
     prepared_data["201"]["6"] = {}
     # Empty when GM isn't open
     if len(gm_borders) == 0:
@@ -35,7 +35,7 @@ async def mix_gm_data(prepared_data, gm_borders):
     return prepared_data
 
 
-async def get_gm_borders(gm_data: dict):
+async def get_gm_borders(gm_data: dict) -> dict:
     gm_table_info = {}
     for index, region in enumerate(REGIONS):
         # No GM data could be retrieved
