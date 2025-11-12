@@ -1,59 +1,59 @@
 name: Build_Schedule
 
 on:
-    schedule:
-        - cron: "30 5,21 * * *"
+  schedule:
+    - cron: "30 5,21 * * *"
 
 jobs:
-    build:
-        runs-on: ${{ matrix.os }}
-        strategy:
-            fail-fast: True
-            matrix:
-                os: [ubuntu-latest]
-                python-version: [3.13]
-                node: ["10"]
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: True
+      matrix:
+        os: [ubuntu-latest]
+        python-version: [3.13]
+        node: ["20"]
 
-        steps:
-            - uses: actions/checkout@v4
-            - uses: actions/setup-node@v1
-              with:
-                  node-version: "${{ matrix.node }}.x"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "${{ matrix.node }}.x"
 
-            - name: Set up Python ${{ matrix.python-version }}
-              uses: actions/setup-python@v4
-              with:
-                  python-version: ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
 
-            - name: Install uv
-              run: pip install uv
+      - name: Install uv
+        run: pip install uv
 
-            - name: Install packages
-              run: uv sync --frozen --no-cache --no-install-project
+      - name: Install packages
+        run: uv sync --frozen --no-cache --no-install-project
 
-            - name: Install dependencies (npm)
-              run: |
-                  npm install
+      - name: Install dependencies (npm)
+        run: |
+          npm install
 
-            - name: Create data tables (python)
-              env:
-                  CLIENT_ID: ${{ secrets.CLIENT_ID }}
-                  CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
-              run: |
-                  uv run python main.py
+      - name: Create data tables (python)
+        env:
+          CLIENT_ID: ${{ secrets.CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+        run: |
+          uv run python main.py
 
-            - name: Create website (npm)
-              run: |
-                  npm run build
+      - name: Create website (npm)
+        run: |
+          npm run build
 
-            - name: Deploy to GitHub Pages
-              if: github.ref == 'refs/heads/master'
-              uses: crazy-max/ghaction-github-pages@v2
-              with:
-                  committer: Deployer Bot <deploy@foo.bar>
-                  author: Deployer Bot <deploy@foo.bar>
-                  allow_empty_commit: false
-                  target_branch: gh-pages
-                  build_dir: build
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/master'
+        uses: crazy-max/ghaction-github-pages@v2
+        with:
+          committer: Deployer Bot <deploy@foo.bar>
+          author: Deployer Bot <deploy@foo.bar>
+          allow_empty_commit: false
+          target_branch: gh-pages
+          build_dir: build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
