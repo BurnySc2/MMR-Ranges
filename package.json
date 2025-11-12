@@ -5,13 +5,13 @@
   "homepage": "./",
   "dependencies": {
     "@types/node": "^12.19.14",
-    "@types/react": "^16.14.2",
-    "@types/react-dom": "^16.9.10",
+    "@types/react": "^17.0.89",
+    "@types/react-dom": "^17.0.26",
     "@types/react-tooltip": "^4.2.4",
     "prettier": "^2.2.1",
-    "react": "^16.14.0",
-    "react-dom": "^16.14.0",
-    "react-scripts": "3.4.3",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-scripts": "^5.0.1",
     "react-tooltip": "^4.2.13",
     "tailwindcss": "^1.9.6",
     "typescript": "^3.9.7"
@@ -38,5 +38,10 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.22",
+    "postcss-flexbugs-fixes": "^5.0.2",
+    "postcss-preset-env": "^10.4.0"
   }
 }
