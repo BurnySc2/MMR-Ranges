@@ -116,9 +116,7 @@ class MMRranges:
         ladders_api_info = await get_sc2_league_api_data(
             self.client, self.token, season_info.season_number, self.delay_per_fetch
         )
-        gm_data = await get_sc2_gm_api_data(
-            self.client, self.token, self.delay_per_fetch
-        )
+        gm_data = await get_sc2_gm_api_data(self.client, self.token, self.delay_per_fetch)
         gm_borders = await get_gm_borders(gm_data)
 
         # Format the received data into a readable shape

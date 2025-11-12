@@ -4,10 +4,6 @@
   "private": true,
   "homepage": "./",
   "dependencies": {
-    "@testing-library/jest-dom": "^4.2.4",
-    "@testing-library/react": "^9.5.0",
-    "@testing-library/user-event": "^7.2.1",
-    "@types/jest": "^24.9.1",
     "@types/node": "^12.19.14",
     "@types/react": "^16.14.2",
     "@types/react-dom": "^16.9.10",
@@ -21,8 +17,8 @@
     "typescript": "^3.9.7"
   },
   "scripts": {
-    "start": "npm run tailwind:css:dev && BROWSER=none react-scripts start",
-    "build": "npm run tailwind:css && react-scripts build",
+    "start": "npm run tailwind:css:dev && BROWSER=none NODE_OPTIONS=--openssl-legacy-provider react-scripts start",
+    "build": "npm run tailwind:css && NODE_OPTIONS=--openssl-legacy-provider react-scripts build",
     "tailwind:css": "tailwind build src/tailwind.css -c tailwind.config.js -o src/index.css",
     "tailwind:css:dev": "tailwind build src/tailwind.css -c tailwind.config.dev.js -o src/index.css",
     "test": "react-scripts test --env=jsdom",

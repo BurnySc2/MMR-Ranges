@@ -1,3 +1,8 @@
+from pydantic import BaseModel
+
+
+
+
 MODES = ["201", "202", "203", "204", "206"]
 TABLE_HEADER = ["Server", "Americas", "Europe", "Korea"]
 STATISTICS_HEADER = ["Race", "P", "T", "Z", "R"]

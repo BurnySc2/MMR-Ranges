@@ -9,9 +9,7 @@ from .constants import REGIONS
 from .helper import fetch_multiple
 
 
-async def get_sc2_gm_api_data(
-    client: httpx.AsyncClient, access_token: str, fetch_delay: float
-):
+async def get_sc2_gm_api_data(client: httpx.AsyncClient, access_token: str, fetch_delay: float):
     url = "https://{}.api.blizzard.com/sc2/ladder/grandmaster/{}"
 
     urls = [url.format(region, index) for index, region in enumerate(REGIONS, start=1)]
@@ -28,6 +26,9 @@ async def get_sc2_gm_api_data(
 
 async def mix_gm_data(prepared_data, gm_borders):
     prepared_data["201"]["6"] = {}
+    # Empty when GM isn't open
+    if len(gm_borders) == 0:
+        return prepared_data
     prepared_data["201"]["6"]["2"] = gm_borders["201"][6][0]
     with open("data_ladder_api_with_gm.json", "w") as f:
         json.dump(prepared_data, f, indent=4, sort_keys=True)

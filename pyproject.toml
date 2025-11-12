@@ -7,10 +7,48 @@ dependencies = [
     "dpath>=2.2.0",
     "httpx>=0.28.0",
     "loguru>=0.7.2",
+    "pydantic>=2.10.6",
 ]
 
 [dependency-groups]
 dev = [
-    "pyre-check>=0.9.23",
+    "pyrefly>=0.41.2",
     "ruff>=0.8.2",
 ]
+
+[tool.yapf]
+based_on_style = "pep8"
+column_limit = 120
+split_arguments_when_comma_terminated = true
+dedent_closing_brackets = true
+allow_split_before_dict_value = false
+
+[tool.pyrefly]
+project_includes = ["src"]
+
+[tool.ruff]
+target-version = 'py310'
+line-length = 120
+
+[tool.ruff.lint]
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+select = [
+    "C4",  # flake8-comprehensions
+    "E",   # Error
+    "F",   # pyflakes
+    "BLE", # flake8-blind-except
+    # "I",   # isort
+    "N",   # pep8-naming
+    "PGH", # pygrep-hooks
+    "PTH", # flake8-use-pathlib
+    "SIM", # flake8-simplify
+    "W",   # Warning
+    "Q",   # flake8-quotes
+    "YTT", # flake8-2020
+    "UP",  # pyupgrade
+    #    "A",  # flake8-builtins
+]
+ignore = ["SIM300"]
+# Allow Pydantic's `@validator` decorator to trigger class method treatment.
+pep8-naming.classmethod-decorators = ["pydantic.validator", "classmethod"]

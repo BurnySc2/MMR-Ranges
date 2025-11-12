@@ -21,7 +21,7 @@ class SeasonInfo:
     season_end_readable: str
 
 
-async def get_current_season_info(client: httpx.AsyncClient, access_token: str):
+async def get_current_season_info(client: httpx.AsyncClient, access_token: str) -> SeasonInfo:
     get_season_number_url = "https://{}.api.blizzard.com/sc2/ladder/season/{}"
     urls = []
     for index, region in enumerate(REGIONS, start=1):
@@ -46,7 +46,7 @@ async def get_current_season_info(client: httpx.AsyncClient, access_token: str):
     )
 
 
-def convert_header_data_to_json(header_data: SeasonInfo):
+def convert_header_data_to_json(header_data: SeasonInfo) -> dict[str, arrow.Arrow | int | str]:
     return {
         "time": arrow.now().strftime("%A %Y-%m-%d %H:%M"),
         "season": header_data.season_number,
