@@ -18,8 +18,8 @@ export default class Header extends Component<Props, State> {
         let row_second_item = "bg-gray-100 hover:bg-gray-400"
 
         return (
-            <div className={header_class}>
-                <div className={title_class}>{`MMR Ranges - Last update: ${data_header.time}`}</div>
+            <div className={header_class} data-testid="header">
+                <div className={title_class} data-testid="header-title">{`MMR Ranges - Last update: ${data_header.time}`}</div>
                 <table className={table_class}>
                     <tr className={header_row_class}>
                         <td className={`${row_items} ${row_first_item}`}>Season number</td>

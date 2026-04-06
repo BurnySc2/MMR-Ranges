@@ -45,6 +45,14 @@ jobs:
         run: |
           npm run build
 
+      - name: Install Playwright browsers
+        run: |
+          npx playwright install --with-deps chromium
+
+      - name: Run e2e tests
+        run: |
+          npx playwright test
+
       - name: Deploy to GitHub Pages
         if: github.ref == 'refs/heads/master'
         uses: crazy-max/ghaction-github-pages@v2
