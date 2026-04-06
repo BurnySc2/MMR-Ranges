@@ -57,6 +57,7 @@ export default class Page extends Component<Props, State> {
                                     onClick={() => {
                                         this.setState({ active: 0 })
                                     }}
+                                    data-testid="tab-1v1"
                                 >
                                     1v1
                                 </div>
@@ -65,6 +66,7 @@ export default class Page extends Component<Props, State> {
                                     onClick={() => {
                                         this.setState({ active: 1 })
                                     }}
+                                    data-testid="tab-2v2"
                                 >
                                     2v2
                                 </div>
@@ -73,6 +75,7 @@ export default class Page extends Component<Props, State> {
                                     onClick={() => {
                                         this.setState({ active: 2 })
                                     }}
+                                    data-testid="tab-3v3"
                                 >
                                     3v3
                                 </div>
@@ -81,6 +84,7 @@ export default class Page extends Component<Props, State> {
                                     onClick={() => {
                                         this.setState({ active: 3 })
                                     }}
+                                    data-testid="tab-4v4"
                                 >
                                     4v4
                                 </div>
@@ -89,6 +93,7 @@ export default class Page extends Component<Props, State> {
                                     onClick={() => {
                                         this.setState({ active: 4 })
                                     }}
+                                    data-testid="tab-archon"
                                 >
                                     Archon
                                 </div>
@@ -107,6 +112,7 @@ export default class Page extends Component<Props, State> {
                                     // Tooltip
                                     data-tip={"(total wins + total losses) / player accounts"}
                                     data-for="globalTooltip"
+                                    data-testid="tab-avg-games"
                                 >
                                     Average games
                                 </div>
@@ -118,6 +124,7 @@ export default class Page extends Component<Props, State> {
                                     // Tooltip
                                     data-tip={"total wins + total losses"}
                                     data-for="globalTooltip"
+                                    data-testid="tab-total-games"
                                 >
                                     Total games
                                 </div>
@@ -129,6 +136,7 @@ export default class Page extends Component<Props, State> {
                                     // Tooltip
                                     data-tip={"total wins / total games"}
                                     data-for="globalTooltip"
+                                    data-testid="tab-avg-winrate"
                                 >
                                     Average winrate
                                 </div>

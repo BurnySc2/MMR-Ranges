@@ -47,13 +47,14 @@ export default class Statistics extends Component<Props, State> {
         let table_kr = this.format_table(this.props.data["kr"])
 
         return (
-            <div className={`flex flex-col items-center ${this.props.enabled ? "" : "hidden"}`}>
+            <div className={`flex flex-col items-center ${this.props.enabled ? "" : "hidden"}`} data-testid="statistics">
                 <div className={selector_row}>
                     <div
                         className={`${selectable_item_class} ${this.selected(0)}`}
                         onClick={() => {
                             this.props.select_region(0)
                         }}
+                        data-testid="region-americas"
                     >
                         Americas
                     </div>
@@ -62,6 +63,7 @@ export default class Statistics extends Component<Props, State> {
                         onClick={() => {
                             this.props.select_region(1)
                         }}
+                        data-testid="region-europe"
                     >
                         Europe
                     </div>
@@ -70,6 +72,7 @@ export default class Statistics extends Component<Props, State> {
                         onClick={() => {
                             this.props.select_region(2)
                         }}
+                        data-testid="region-korea"
                     >
                         Korea
                     </div>
@@ -79,6 +82,7 @@ export default class Statistics extends Component<Props, State> {
                         className={`${content_class} ${
                             this.props.selected_region !== 0 ? hidden_class : null
                         }`}
+                        data-testid="table-us"
                     >
                         {table_us}
                     </div>
@@ -86,6 +90,7 @@ export default class Statistics extends Component<Props, State> {
                         className={`${content_class} ${
                             this.props.selected_region !== 1 ? hidden_class : null
                         }`}
+                        data-testid="table-eu"
                     >
                         {table_eu}
                     </div>
@@ -93,6 +98,7 @@ export default class Statistics extends Component<Props, State> {
                         className={`${content_class} ${
                             this.props.selected_region !== 2 ? hidden_class : null
                         }`}
+                        data-testid="table-kr"
                     >
                         {table_kr}
                     </div>

@@ -37,7 +37,7 @@ export default class Table extends Component<Props, State> {
         let table_full = <table className={table_class}>{table}</table>
 
         return (
-            <div className={`${content_class} ${this.props.enabled ? "" : "hidden"}`}>
+            <div className={`${content_class} ${this.props.enabled ? "" : "hidden"}`} data-testid="table">
                 {table_full}
             </div>
         )
